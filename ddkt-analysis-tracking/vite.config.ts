@@ -40,10 +40,9 @@ if (host === "localhost") {
 export default defineConfig({
   server: {
     allowedHosts: [
-      host,
+      'shopify-ddkt-analysis-tracking.vercel.app',
       'localhost',
-      '127.0.0.1',
-      '*.trycloudflare.com',
+      '127.0.0.1'
     ],
     cors: {
       preflightContinue: true,

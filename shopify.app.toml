@@ -3,7 +3,7 @@
 client_id = "f6628e980dc66a39b5e499c67f7723e4"
 name = "DDKT Analysis Tracking"
 handle = "ddkt-analysis-tracking"
-application_url = "https://productivity-nut-sensitivity-organizing.trycloudflare.com"
+application_url = "https://shopify-ddkt-analysis-tracking.vercel.app"
 embedded = true
 
 [build]
@@ -26,7 +26,11 @@ api_version = "2025-04"
 scopes = "write_products,write_script_tags,read_script_tags"
 
 [auth]
-redirect_urls = ["https://productivity-nut-sensitivity-organizing.trycloudflare.com/auth/callback", "https://productivity-nut-sensitivity-organizing.trycloudflare.com/auth/shopify/callback", "https://productivity-nut-sensitivity-organizing.trycloudflare.com/api/auth/callback"]
+redirect_urls = [
+  "https://shopify-ddkt-analysis-tracking.vercel.app/auth/callback",
+  "https://shopify-ddkt-analysis-tracking.vercel.app/auth/shopify/callback",
+  "https://shopify-ddkt-analysis-tracking.vercel.app/api/auth/callback"
+]
 
 [pos]
 embedded = false
