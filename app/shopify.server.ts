@@ -29,7 +29,9 @@ const shopify = shopifyApp({
     // 產生 tracking ID
     const base64 = Buffer.from(shop).toString('base64').replace(/=+$/, '');
     const trackingId = `spfy-${base64}`;
-    const scriptUrl = `https://506e-111-249-187-217.ngrok-free.app/pixel.js?tid=${trackingId}`;
+    // 根據環境自動切換 domain
+    const appUrl = process.env.SHOPIFY_APP_URL || 'https://shopify-ddkt-analysis-tracking.vercel.app';
+    const scriptUrl = `${appUrl}/pixel.js?tid=${trackingId}`;
     console.log('【安裝 afterAuth】shop:', shop);
     console.log('【安裝 afterAuth】trackingId:', trackingId);
     console.log('【安裝 afterAuth】scriptUrl:', scriptUrl);
@@ -38,7 +40,7 @@ const shopify = shopifyApp({
       const { body } = await admin.rest.get({ path: 'script_tags' });
       console.log('【安裝 afterAuth】註冊前所有 ScriptTag:', body.script_tags);
       for (const tag of body.script_tags) {
-        if (tag.src && tag.src.startsWith('https://506e-111-249-187-217.ngrok-free.app/pixel.js')) {
+        if (tag.src && tag.src.startsWith(`${appUrl}/pixel.js`)) {
           await admin.rest.delete({ path: `script_tags/${tag.id}` });
           console.log('【安裝 afterAuth】已刪除舊 ScriptTag:', tag.id, tag.src);
         }
