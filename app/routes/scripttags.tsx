@@ -7,12 +7,64 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     console.log("=== ScriptTag 檢查路由被觸發 ===");
 
     try {
-        const { admin } = await authenticate.admin(request);
+        console.log("【ScriptTag】開始認證...");
+        const authResult = await authenticate.admin(request);
+
+        console.log("【ScriptTag】認證結果:", {
+            hasAdmin: !!authResult.admin,
+            hasSession: !!authResult.session,
+            shop: authResult.session?.shop || "未取得"
+        });
+
+        if (!authResult.admin) {
+            console.error("【ScriptTag】認證失敗：admin 物件為空");
+            return json({
+                success: false,
+                error: {
+                    message: "認證失敗：無法獲取 admin 物件",
+                    status: 401,
+                    statusText: "Unauthorized"
+                }
+            }, { status: 401 });
+        }
+
+        const { admin } = authResult;
+        console.log("【ScriptTag】Admin 物件類型:", typeof admin);
+        console.log("【ScriptTag】Admin 物件方法:", Object.keys(admin));
+
+        // 使用類型斷言來處理 admin 物件
+        const adminAny = admin as any;
+
+        // 檢查 admin.rest 是否存在
+        if (!adminAny.rest) {
+            console.error("【ScriptTag】Admin 物件缺少 rest 屬性");
+            return json({
+                success: false,
+                error: {
+                    message: "Admin 物件結構不正確：缺少 rest 屬性",
+                    status: 500,
+                    statusText: "Internal Server Error"
+                }
+            }, { status: 500 });
+        }
+
+        // 檢查 admin.rest.get 是否存在
+        if (typeof adminAny.rest.get !== 'function') {
+            console.error("【ScriptTag】Admin.rest.get 不是函數");
+            return json({
+                success: false,
+                error: {
+                    message: "Admin API 方法不可用：rest.get 不是函數",
+                    status: 500,
+                    statusText: "Internal Server Error"
+                }
+            }, { status: 500 });
+        }
 
         console.log("【ScriptTag】開始查詢所有 ScriptTag...");
 
         // 查詢所有 ScriptTag
-        const { body } = await (admin as any).rest.get({ path: 'script_tags' });
+        const { body } = await adminAny.rest.get({ path: 'script_tags' });
         console.log("【ScriptTag】查詢結果:", JSON.stringify(body.script_tags, null, 2));
 
         const appUrl = process.env.SHOPIFY_APP_URL || 'https://shopify-ddkt-analysis-tracking.vercel.app';
@@ -32,15 +84,26 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         });
     } catch (error: any) {
         console.error("【ScriptTag】查詢失敗:", error);
+        console.error("【ScriptTag】錯誤詳情:", {
+            message: error?.message,
+            stack: error?.stack,
+            name: error?.name,
+            status: error?.status,
+            statusText: error?.statusText
+        });
 
         return json({
             success: false,
             error: {
-                message: error?.message,
-                status: error?.status,
-                statusText: error?.statusText
+                message: error?.message || "未知錯誤",
+                status: error?.status || 500,
+                statusText: error?.statusText || "Internal Server Error",
+                details: {
+                    name: error?.name,
+                    stack: error?.stack
+                }
             }
-        }, { status: 500 });
+        }, { status: error?.status || 500 });
     }
 };
 
