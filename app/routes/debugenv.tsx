@@ -17,8 +17,4 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
             "Content-Type": "application/json"
         }
     });
-};
-
-export default function DebugEnv() {
-    return <div>請用 GET 請求取得 JSON 結果 </div>;
-} 
+}; 
