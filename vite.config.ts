@@ -47,6 +47,10 @@ export default defineConfig({
       'c845-111-249-187-217.ngrok-free.app',
       '106d-111-249-187-217.ngrok-free.app',
       '506e-111-249-187-217.ngrok-free.app',
+      'translate-vii-tc-niagara.trycloudflare.com',
+      'tub-reasonably-holly-steal.trycloudflare.com',
+      'shopify-ddkt-analysis-tracking.vercel.app',
+      '*.trycloudflare.com',
     ],
     cors: {
       origin: '*',

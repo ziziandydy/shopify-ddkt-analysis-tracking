@@ -10,9 +10,48 @@ import { authenticate } from "../shopify.server";
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
+  console.log("=== App 路由被觸發 ===");
+  console.log("【App】請求 URL:", request.url);
+  console.log("【App】請求方法:", request.method);
+  console.log("【App】User-Agent:", request.headers.get("user-agent"));
+  console.log("【App】Referer:", request.headers.get("referer"));
+  console.log("【App】Host:", request.headers.get("host"));
+  console.log("【App】Cookie:", request.headers.get("cookie") ? "已設定" : "未設定");
 
-  return { apiKey: process.env.SHOPIFY_API_KEY || "" };
+  try {
+    console.log("【App】開始執行 authenticate.admin...");
+    const result = await authenticate.admin(request);
+    console.log("【App】authenticate.admin 成功完成");
+    console.log("【App】認證結果:", {
+      session: result.session ? "已建立" : "未建立",
+      admin: result.admin ? "已建立" : "未建立",
+      shop: result.session?.shop || "未取得",
+      accessToken: result.session?.accessToken ? "已取得" : "未取得"
+    });
+
+    const apiKey = process.env.SHOPIFY_API_KEY || "";
+    console.log("【App】API Key:", apiKey ? "已設定" : "未設定");
+
+    return { apiKey };
+  } catch (error: any) {
+    console.error("【App】認證過程發生錯誤:");
+    console.error("【App】錯誤類型:", error?.constructor?.name);
+    console.error("【App】錯誤訊息:", error?.message);
+    console.error("【App】錯誤堆疊:", error?.stack);
+    console.error("【App】錯誤狀態:", error?.status);
+    console.error("【App】錯誤狀態文字:", error?.statusText);
+
+    // 如果是重定向錯誤，記錄重定向資訊
+    if (error?.status >= 300 && error?.status < 400) {
+      console.log("【App】檢測到重定向:", {
+        status: error.status,
+        headers: Object.fromEntries(error.headers?.entries() || []),
+        url: error.headers?.get("location")
+      });
+    }
+
+    throw error;
+  }
 };
 
 export default function App() {

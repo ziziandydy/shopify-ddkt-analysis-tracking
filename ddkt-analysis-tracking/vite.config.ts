@@ -42,7 +42,8 @@ export default defineConfig({
     allowedHosts: [
       'shopify-ddkt-analysis-tracking.vercel.app',
       'localhost',
-      '127.0.0.1'
+      '127.0.0.1',
+      '*.trycloudflare.com'
     ],
     cors: {
       preflightContinue: true,
