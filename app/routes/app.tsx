@@ -6,6 +6,7 @@ import { NavMenu } from "@shopify/app-bridge-react";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 
 import { authenticate } from "../shopify.server";
+import { logCookieInfo, logCookieHeaders } from "../utils/cookie-logger";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -16,7 +17,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   console.log("【App】User-Agent:", request.headers.get("user-agent"));
   console.log("【App】Referer:", request.headers.get("referer"));
   console.log("【App】Host:", request.headers.get("host"));
-  console.log("【App】Cookie:", request.headers.get("cookie") ? "已設定" : "未設定");
+  // 詳細記錄 Cookie 資訊
+  logCookieHeaders("App", request);
+  logCookieInfo("App", request);
 
   try {
     console.log("【App】開始執行 authenticate.admin...");

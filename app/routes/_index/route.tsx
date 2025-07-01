@@ -40,16 +40,34 @@ export default function App() {
         )}
         <ul className={styles.list}>
           <li>
-            <strong>Product feature</strong>. Some detail about your feature and
-            its benefit to your customer.
+            <strong>資料庫連接測試</strong>. 快速診斷資料庫連接池問題。
+            <a href="/db-test" style={{ color: "#007bff", textDecoration: "none", marginLeft: "10px" }}>
+              → 連接測試
+            </a>
           </li>
           <li>
-            <strong>Product feature</strong>. Some detail about your feature and
-            its benefit to your customer.
+            <strong>資料庫健康檢查</strong>. 詳細監控資料庫連接狀態和效能。
+            <a href="/db-health" style={{ color: "#007bff", textDecoration: "none", marginLeft: "10px" }}>
+              → 健康檢查
+            </a>
           </li>
           <li>
-            <strong>Product feature</strong>. Some detail about your feature and
-            its benefit to your customer.
+            <strong>OAuth 調試</strong>. 查看 OAuth 認證流程和錯誤詳情。
+            <a href="/debug-oauth" style={{ color: "#007bff", textDecoration: "none", marginLeft: "10px" }}>
+              → 調試 OAuth
+            </a>
+          </li>
+          <li>
+            <strong>Web Pixels 測試</strong>. 測試 Shopify Web Pixels API 整合。
+            <a href="/webpixels-test" style={{ color: "#007bff", textDecoration: "none", marginLeft: "10px" }}>
+              → 測試 Web Pixels
+            </a>
+          </li>
+          <li>
+            <strong>Cookie 調試</strong>. 詳細分析和記錄 Cookie 資訊。
+            <a href="/cookie-debug" style={{ color: "#007bff", textDecoration: "none", marginLeft: "10px" }}>
+              → Cookie 調試
+            </a>
           </li>
         </ul>
       </div>

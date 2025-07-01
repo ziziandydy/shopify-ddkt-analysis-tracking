@@ -1,5 +1,6 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { authenticate } from "../shopify.server";
+import { logCookieInfo, logCookieHeaders } from "../utils/cookie-logger";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   console.log("=== Auth 路由被觸發 ===");
@@ -8,6 +9,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   console.log("【Auth】User-Agent:", request.headers.get("user-agent"));
   console.log("【Auth】Referer:", request.headers.get("referer"));
   console.log("【Auth】Host:", request.headers.get("host"));
+
+  // 詳細記錄 Cookie 資訊
+  logCookieHeaders("Auth", request);
+  logCookieInfo("Auth", request);
+
   console.log("【Auth】環境變數檢查:", {
     SHOPIFY_API_KEY: process.env.SHOPIFY_API_KEY ? "已設定" : "未設定",
     SHOPIFY_API_SECRET: process.env.SHOPIFY_API_SECRET ? "已設定" : "未設定",

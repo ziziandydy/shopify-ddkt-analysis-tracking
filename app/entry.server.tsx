@@ -7,6 +7,7 @@ import {
 } from "@remix-run/node";
 import { isbot } from "isbot";
 import { addDocumentResponseHeaders } from "./shopify.server";
+import { logCookieInfo, logCookieHeaders } from "./utils/cookie-logger";
 
 export const streamTimeout = 5000;
 
@@ -22,7 +23,9 @@ export default async function handleRequest(
   console.log("【Server】User-Agent:", request.headers.get("user-agent"));
   console.log("【Server】Host:", request.headers.get("host"));
   console.log("【Server】Referer:", request.headers.get("referer"));
-  console.log("【Server】Cookie:", request.headers.get("cookie") ? "已設定" : "未設定");
+  // 詳細記錄 Cookie 資訊
+  logCookieHeaders("Server", request);
+  logCookieInfo("Server", request);
   console.log("【Server】初始狀態碼:", responseStatusCode);
 
   try {
