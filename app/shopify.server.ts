@@ -36,7 +36,7 @@ const shopify = shopifyApp({
     ? { customShopDomains: [process.env.SHOP_CUSTOM_DOMAIN] }
     : {}),
   afterAuth: async ({ admin, shop }: any) => {
-    console.log("=== 進入 afterAuth callback ===", { shop, env: process.env.NODE_ENV });
+    console.log("=== 進入 afterAuth callback ===", { shop, env: process.env.NODE_ENV, time: new Date().toISOString() });
     console.log('【afterAuth】觸發！shop:', shop, 'env:', process.env.NODE_ENV, 'appUrl:', process.env.SHOPIFY_APP_URL);
     // 產生 tracking ID
     const base64 = Buffer.from(shop).toString('base64').replace(/=+$/, '');
