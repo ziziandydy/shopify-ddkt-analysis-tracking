@@ -8,6 +8,17 @@ import {
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import prisma from "./db.server";
 
+console.log("=== Shopify app 初始化開始 ===");
+let sessionStorageInstance;
+try {
+  console.log("=== PrismaSessionStorage 實例化開始 ===");
+  sessionStorageInstance = new PrismaSessionStorage(prisma);
+  console.log("=== PrismaSessionStorage 實例化成功 ===");
+} catch (e) {
+  console.error("[Log] PrismaSessionStorage 實例化失敗", e);
+  throw e;
+}
+
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
   apiSecretKey: process.env.SHOPIFY_API_SECRET || "",
@@ -15,7 +26,7 @@ const shopify = shopifyApp({
   scopes: process.env.SCOPES?.split(","),
   appUrl: process.env.SHOPIFY_APP_URL || "",
   authPathPrefix: "/auth",
-  sessionStorage: new PrismaSessionStorage(prisma),
+  sessionStorage: sessionStorageInstance,
   distribution: AppDistribution.AppStore,
   future: {
     unstable_newEmbeddedAuthStrategy: true,
@@ -25,6 +36,7 @@ const shopify = shopifyApp({
     ? { customShopDomains: [process.env.SHOP_CUSTOM_DOMAIN] }
     : {}),
   afterAuth: async ({ admin, shop }: any) => {
+    console.log("=== 進入 afterAuth callback ===", { shop, env: process.env.NODE_ENV });
     console.log('【afterAuth】觸發！shop:', shop, 'env:', process.env.NODE_ENV, 'appUrl:', process.env.SHOPIFY_APP_URL);
     // 產生 tracking ID
     const base64 = Buffer.from(shop).toString('base64').replace(/=+$/, '');
@@ -70,6 +82,7 @@ const shopify = shopifyApp({
     console.log('【afterAuth】安裝流程結束！');
   },
 });
+console.log("=== Shopify app 初始化結束 ===");
 
 export default shopify;
 export const apiVersion = ApiVersion.January25;
