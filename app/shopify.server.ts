@@ -25,24 +25,21 @@ const shopify = shopifyApp({
     ? { customShopDomains: [process.env.SHOP_CUSTOM_DOMAIN] }
     : {}),
   afterAuth: async ({ admin, shop }: any) => {
-    console.log('【安裝 afterAuth】被呼叫！');
+    console.log('【afterAuth】觸發！shop:', shop, 'env:', process.env.NODE_ENV, 'appUrl:', process.env.SHOPIFY_APP_URL);
     // 產生 tracking ID
     const base64 = Buffer.from(shop).toString('base64').replace(/=+$/, '');
     const trackingId = `spfy-${base64}`;
-    // 根據環境自動切換 domain
     const appUrl = process.env.SHOPIFY_APP_URL || 'https://shopify-ddkt-analysis-tracking.vercel.app';
     const scriptUrl = `${appUrl}/pixel.js?tid=${trackingId}`;
-    console.log('【安裝 afterAuth】shop:', shop);
-    console.log('【安裝 afterAuth】trackingId:', trackingId);
-    console.log('【安裝 afterAuth】scriptUrl:', scriptUrl);
+    console.log('【afterAuth】產生 trackingId:', trackingId, 'scriptUrl:', scriptUrl);
     try {
       // 查詢現有 ScriptTag
       const { body } = await admin.rest.get({ path: 'script_tags' });
-      console.log('【安裝 afterAuth】註冊前所有 ScriptTag:', body.script_tags);
+      console.log('【afterAuth】註冊前所有 ScriptTag:', JSON.stringify(body.script_tags));
       for (const tag of body.script_tags) {
         if (tag.src && tag.src.startsWith(`${appUrl}/pixel.js`)) {
           await admin.rest.delete({ path: `script_tags/${tag.id}` });
-          console.log('【安裝 afterAuth】已刪除舊 ScriptTag:', tag.id, tag.src);
+          console.log('【afterAuth】已刪除舊 ScriptTag:', tag.id, tag.src);
         }
       }
       // 註冊新的 ScriptTag
@@ -56,21 +53,21 @@ const shopify = shopifyApp({
         },
         type: 'application/json',
       });
-      console.log('【安裝 afterAuth】ScriptTag 註冊成功:', scriptUrl, result);
+      console.log('【afterAuth】ScriptTag 註冊成功:', scriptUrl, JSON.stringify(result));
       // 再查詢一次 ScriptTag
       const { body: afterBody } = await admin.rest.get({ path: 'script_tags' });
-      console.log('【安裝 afterAuth】註冊後所有 ScriptTag:', afterBody.script_tags);
+      console.log('【afterAuth】註冊後所有 ScriptTag:', JSON.stringify(afterBody.script_tags));
     } catch (e) {
-      console.error('【安裝 afterAuth】ScriptTag 註冊失敗:', e);
+      console.error('【afterAuth】ScriptTag 註冊流程失敗:', e);
     }
     // 額外記錄 admin user 資訊
     try {
       const shopInfo = await admin.rest.get({ path: 'shop' });
-      console.log('【安裝 afterAuth】shopInfo:', shopInfo);
+      console.log('【afterAuth】shopInfo:', JSON.stringify(shopInfo));
     } catch (e) {
-      console.error('【安裝 afterAuth】取得 shopInfo 失敗:', e);
+      console.error('【afterAuth】取得 shopInfo 失敗:', e);
     }
-    console.log('【安裝 afterAuth】安裝流程結束！');
+    console.log('【afterAuth】安裝流程結束！');
   },
 });
 
