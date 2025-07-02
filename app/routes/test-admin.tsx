@@ -84,7 +84,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
         // 測試 script_tags API
         const scriptTagsResponse = await adminAny.rest.get({ path: 'script_tags' });
-        console.log("[DEBUG] ScriptTag API 回傳:", JSON.stringify(scriptTagsResponse.body, null, 2));
+        if (scriptTagsResponse.body && Array.isArray(scriptTagsResponse.body.script_tags)) {
+            console.log("[DEBUG] ScriptTag API 回傳 script_tags 數量:", scriptTagsResponse.body.script_tags.length);
+        } else {
+            console.log("[DEBUG] ScriptTag API 回傳內容:", typeof scriptTagsResponse.body, scriptTagsResponse.body && Object.keys(scriptTagsResponse.body));
+        }
 
         return json({
             success: true,

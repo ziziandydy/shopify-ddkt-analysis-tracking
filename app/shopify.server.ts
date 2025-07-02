@@ -126,7 +126,11 @@ const shopify = shopifyApp({
       // 查詢現有 ScriptTag
       console.log('【afterAuth】查詢現有 ScriptTag...');
       const { body } = await admin.rest.get({ path: 'script_tags' });
-      console.log("[DEBUG] ScriptTag API 回傳:", JSON.stringify(body, null, 2));
+      if (body && Array.isArray(body.script_tags)) {
+        console.log("[DEBUG] ScriptTag API 回傳 script_tags 數量:", body.script_tags.length);
+      } else {
+        console.log("[DEBUG] ScriptTag API 回傳內容:", typeof body, body && Object.keys(body));
+      }
       console.log('【afterAuth】註冊前所有 ScriptTag:', JSON.stringify(body.script_tags));
 
       // 刪除舊的 ScriptTag

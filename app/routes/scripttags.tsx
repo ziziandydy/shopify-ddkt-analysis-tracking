@@ -78,7 +78,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
         // 查詢所有 ScriptTag
         const { body } = await adminAny.rest.get({ path: 'script_tags' });
-        console.log("[DEBUG] ScriptTag API 回傳:", JSON.stringify(body, null, 2));
+        if (body && Array.isArray(body.script_tags)) {
+            console.log("[DEBUG] ScriptTag API 回傳 script_tags 數量:", body.script_tags.length);
+        } else {
+            console.log("[DEBUG] ScriptTag API 回傳內容:", typeof body, body && Object.keys(body));
+        }
 
         const appUrl = process.env.SHOPIFY_APP_URL || 'https://shopify-ddkt-analysis-tracking.vercel.app';
         const ourScriptTags = body.script_tags.filter((tag: any) =>
