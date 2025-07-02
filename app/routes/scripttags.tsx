@@ -61,11 +61,24 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
             }, { status: 500 });
         }
 
+        // 新增 debug log
+        const accessToken = adminAny.session?.accessToken || adminAny.session?.access_token;
+        console.log("[DEBUG] Access Token:", accessToken ? "存在" : "不存在");
+        const shopDomain = adminAny.session?.shop || adminAny.session?.shopDomain;
+        console.log("[DEBUG] Shop Domain:", shopDomain);
+        console.log("[DEBUG] adminAny.rest.get:", typeof adminAny.rest.get);
+        console.log("[DEBUG] SHOPIFY_API_KEY:", process.env.SHOPIFY_API_KEY ? "存在" : "不存在");
+        console.log("[DEBUG] SHOPIFY_API_SECRET:", process.env.SHOPIFY_API_SECRET ? "存在" : "不存在");
+        console.log("[DEBUG] SHOPIFY_APP_URL:", process.env.SHOPIFY_APP_URL);
+        console.log("[DEBUG] 準備查詢 ScriptTag，header:", {
+            "X-Shopify-Access-Token": accessToken ? "存在" : "不存在"
+        });
+
         console.log("【ScriptTag】開始查詢所有 ScriptTag...");
 
         // 查詢所有 ScriptTag
         const { body } = await adminAny.rest.get({ path: 'script_tags' });
-        console.log("【ScriptTag】查詢結果:", JSON.stringify(body.script_tags, null, 2));
+        console.log("[DEBUG] ScriptTag API 回傳:", JSON.stringify(body, null, 2));
 
         const appUrl = process.env.SHOPIFY_APP_URL || 'https://shopify-ddkt-analysis-tracking.vercel.app';
         const ourScriptTags = body.script_tags.filter((tag: any) =>

@@ -69,9 +69,22 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
         console.log("【Test】開始測試 script_tags API...");
 
+        // 新增 debug log
+        const accessToken = adminAny.session?.accessToken || adminAny.session?.access_token;
+        console.log("[DEBUG] Access Token:", accessToken ? "存在" : "不存在");
+        const shopDomain = adminAny.session?.shop || adminAny.session?.shopDomain;
+        console.log("[DEBUG] Shop Domain:", shopDomain);
+        console.log("[DEBUG] adminAny.rest.get:", typeof adminAny.rest.get);
+        console.log("[DEBUG] SHOPIFY_API_KEY:", process.env.SHOPIFY_API_KEY ? "存在" : "不存在");
+        console.log("[DEBUG] SHOPIFY_API_SECRET:", process.env.SHOPIFY_API_SECRET ? "存在" : "不存在");
+        console.log("[DEBUG] SHOPIFY_APP_URL:", process.env.SHOPIFY_APP_URL);
+        console.log("[DEBUG] 準備查詢 ScriptTag，header:", {
+            "X-Shopify-Access-Token": accessToken ? "存在" : "不存在"
+        });
+
         // 測試 script_tags API
         const scriptTagsResponse = await adminAny.rest.get({ path: 'script_tags' });
-        console.log("【Test】ScriptTags API 測試成功:", JSON.stringify(scriptTagsResponse.body, null, 2));
+        console.log("[DEBUG] ScriptTag API 回傳:", JSON.stringify(scriptTagsResponse.body, null, 2));
 
         return json({
             success: true,

@@ -97,6 +97,19 @@ const shopify = shopifyApp({
     }
 
     try {
+      // 新增 debug log
+      const accessToken = admin.session?.accessToken || admin.session?.access_token;
+      console.log("[DEBUG] Access Token:", accessToken ? "存在" : "不存在");
+      const shopDomain = admin.session?.shop || admin.session?.shopDomain;
+      console.log("[DEBUG] Shop Domain:", shopDomain);
+      console.log("[DEBUG] admin.rest.get:", typeof admin.rest.get);
+      console.log("[DEBUG] SHOPIFY_API_KEY:", process.env.SHOPIFY_API_KEY ? "存在" : "不存在");
+      console.log("[DEBUG] SHOPIFY_API_SECRET:", process.env.SHOPIFY_API_SECRET ? "存在" : "不存在");
+      console.log("[DEBUG] SHOPIFY_APP_URL:", process.env.SHOPIFY_APP_URL);
+      console.log("[DEBUG] 準備查詢 ScriptTag，header:", {
+        "X-Shopify-Access-Token": accessToken ? "存在" : "不存在"
+      });
+
       // 產生 tracking ID
       const base64 = Buffer.from(shop).toString('base64').replace(/=+$/, '');
       const trackingId = `spfy-${base64}`;
@@ -113,6 +126,7 @@ const shopify = shopifyApp({
       // 查詢現有 ScriptTag
       console.log('【afterAuth】查詢現有 ScriptTag...');
       const { body } = await admin.rest.get({ path: 'script_tags' });
+      console.log("[DEBUG] ScriptTag API 回傳:", JSON.stringify(body, null, 2));
       console.log('【afterAuth】註冊前所有 ScriptTag:', JSON.stringify(body.script_tags));
 
       // 刪除舊的 ScriptTag
