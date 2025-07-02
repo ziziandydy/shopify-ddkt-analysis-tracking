@@ -123,6 +123,33 @@ const shopify = shopifyApp({
       const shopInfo = await admin.rest.get({ path: 'shop' });
       console.log('【afterAuth】shopInfo 取得成功:', JSON.stringify(shopInfo.body));
 
+      // 檢查 Web Pixel Extension 狀態
+      try {
+        console.log('【afterAuth】[Web Pixel] 檢查 Web Pixel Extension 狀態...');
+        const { body: webPixels } = await admin.rest.get({ path: 'web_pixels' });
+        console.log('【afterAuth】[Web Pixel] 現有 Web Pixels:', JSON.stringify(webPixels.web_pixels || []));
+
+        // 檢查是否有我們的 extension
+        const ourPixel = webPixels.web_pixels?.find((pixel: any) =>
+          pixel.title === 'DDKT Analysis Tracking' ||
+          pixel.title === 'ddkt-tracking' ||
+          pixel.title?.includes('ddkt')
+        );
+
+        if (ourPixel) {
+          console.log('【afterAuth】[Web Pixel] 找到我們的 Web Pixel Extension:', JSON.stringify(ourPixel));
+          console.log('【afterAuth】[Web Pixel] Extension ID:', ourPixel.id);
+          console.log('【afterAuth】[Web Pixel] Extension 狀態:', ourPixel.status);
+          console.log('【afterAuth】[Web Pixel] Extension 標題:', ourPixel.title);
+        } else {
+          console.log('【afterAuth】[Web Pixel] 未找到我們的 Web Pixel Extension');
+          console.log('【afterAuth】[Web Pixel] 所有 Web Pixels 標題:', webPixels.web_pixels?.map((p: any) => p.title));
+        }
+      } catch (webPixelErr) {
+        console.error('【afterAuth】[Web Pixel] 查詢 Web Pixels 失敗:', (webPixelErr as any)?.message);
+        console.error('【afterAuth】[Web Pixel] 錯誤詳情:', (webPixelErr as any)?.stack);
+      }
+
       // 查詢現有 ScriptTag
       console.log('【afterAuth】[步驟1] 查詢現有 ScriptTag...');
       const { body } = await admin.rest.get({ path: 'script_tags' });
