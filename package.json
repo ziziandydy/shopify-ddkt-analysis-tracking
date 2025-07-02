@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "prisma generate && remix vite:build",
-    "vercel-build": "npm install --no-optional && prisma generate && remix vite:build",
+    "vercel-build": "npm install --no-optional --legacy-peer-deps && prisma generate && remix vite:build",
     "dev": "shopify app dev",
     "config:link": "shopify app config link",
     "generate": "shopify app generate",
@@ -54,7 +54,7 @@
     "eslint-config-prettier": "^10.0.1",
     "prettier": "^3.2.4",
     "typescript": "^5.2.2",
-    "vite": "^7.0.0"
+    "vite": "^6.3.5"
   },
   "workspaces": [
     "extensions/*"
