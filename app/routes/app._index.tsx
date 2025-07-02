@@ -238,103 +238,32 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (action === "checkWebPixels") {
       try {
-        console.log("【App】開始檢查 Web Pixel Extensions...");
-        // 使用類型斷言來處理 admin 物件
-        const adminAny = admin as any;
-
-        // 檢查 admin.rest 是否存在
-        if (!adminAny.rest) {
-          console.error("【App】Admin 物件缺少 rest 屬性");
-          return {
-            type: "webPixels",
-            success: false,
-            error: {
-              message: "Admin 物件結構不正確：缺少 rest 屬性",
-              status: 500,
-              statusText: "Internal Server Error"
-            }
-          };
-        }
-
-        // 新增 debug log
-        const accessToken = adminAny.session?.accessToken || adminAny.session?.access_token;
-        const shopDomain = adminAny.session?.shop || adminAny.session?.shopDomain;
-        console.log("[DEBUG] Web Pixels 檢查 - Access Token:", accessToken ? "存在" : "不存在");
-        console.log("[DEBUG] Web Pixels 檢查 - Shop Domain:", shopDomain);
-        console.log("[DEBUG] Web Pixels 檢查 - adminAny.rest.get:", typeof adminAny.rest.get);
-        console.log("[DEBUG] Web Pixels 檢查 - 準備查詢 web_pixels，header:", {
-          "X-Shopify-Access-Token": accessToken ? "存在" : "不存在"
-        });
-
-        // 查詢 Web Pixels - 嘗試不同的 API 路徑
-        let response;
-
-        try {
-          // 嘗試標準的 web_pixels 路徑
-          response = await adminAny.rest.get({ path: 'web_pixels' });
-          console.log("【App】使用 web_pixels 路徑成功");
-        } catch (error: any) {
-          console.log("【App】web_pixels 路徑失敗，嘗試其他路徑:", error?.status, error?.statusText);
-
-          try {
-            // 嘗試 web_pixel_extensions 路徑
-            response = await adminAny.rest.get({ path: 'web_pixel_extensions' });
-            console.log("【App】使用 web_pixel_extensions 路徑成功");
-          } catch (error2: any) {
-            console.log("【App】web_pixel_extensions 路徑也失敗:", error2?.status, error2?.statusText);
-
-            try {
-              // 嘗試 extensions 路徑
-              response = await adminAny.rest.get({ path: 'extensions' });
-              console.log("【App】使用 extensions 路徑成功");
-            } catch (error3: any) {
-              console.log("【App】所有路徑都失敗，拋出錯誤");
-              throw error3;
+        console.log("【App】開始用 GraphQL 查詢 Web Pixel Extensions...");
+        const query = `
+          query {
+            webPixels(first: 10) {
+              edges {
+                node {
+                  id
+                  title
+                  status
+                  settings
+                  createdAt
+                  updatedAt
+                }
+              }
             }
           }
-        }
-
-        let body;
-        if (typeof response.json === 'function') {
-          body = await response.json();
-        } else {
-          body = response.body;
-        }
-
-        console.log("【App】Web Pixels API 回應類型:", typeof body);
-        console.log("【App】Web Pixels API 回應 keys:", Object.keys(body || {}));
-        // 避免循環引用問題，只記錄基本資訊
-        if (body && typeof body === 'object') {
-          console.log("【App】Web Pixels API 回應基本資訊:", {
-            hasWebPixels: !!(body as any).web_pixels,
-            webPixelsCount: Array.isArray((body as any).web_pixels) ? (body as any).web_pixels.length : 0,
-            webPixelsTitles: Array.isArray((body as any).web_pixels) ? (body as any).web_pixels.map((p: any) => p.title) : []
-          });
-        }
-
-        // 防呆：確保 web_pixels 一定是陣列
-        const webPixels = Array.isArray(body?.web_pixels) ? body.web_pixels : [];
-        if (!Array.isArray(body?.web_pixels)) {
-          console.error("[Web Pixels] Shopify API 回傳格式異常，無法取得 web_pixels:", body);
-        }
-
-        // 檢查是否有我們的 extension
+        `;
+        const response = await admin.graphql(query);
+        const data = await response.json();
+        const webPixels = data.data.webPixels.edges.map((edge: any) => edge.node);
         const ourPixel = webPixels.find((pixel: any) =>
           pixel.title === 'DDKT Analysis Tracking' ||
           pixel.title === 'ddkt-tracking' ||
           pixel.title?.includes('ddkt')
         );
-
-        console.log("【App】Web Pixels 檢查結果:", {
-          totalCount: webPixels.length,
-          ourPixelFound: !!ourPixel,
-          ourPixel: ourPixel ? {
-            id: ourPixel.id,
-            title: ourPixel.title,
-            status: ourPixel.status
-          } : null
-        });
-
+        console.log("【App】Web Pixels 查詢結果:", webPixels);
         return {
           type: "webPixels",
           success: true,
@@ -345,25 +274,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         };
       } catch (error: any) {
         console.error("【App】Web Pixels 查詢失敗:", error?.message, error?.stack);
-        console.error("【App】Web Pixels 錯誤詳情:", {
-          message: error?.message,
-          stack: error?.stack,
-          name: error?.name,
-          status: error?.status,
-          statusText: error?.statusText
-        });
-
         return {
           type: "webPixels",
           success: false,
           error: {
             message: error?.message || "未知錯誤",
             status: error?.status || 500,
-            statusText: error?.statusText || "Internal Server Error",
-            details: {
-              name: error?.name,
-              stack: error?.stack
-            }
+            statusText: error?.statusText || "Internal Server Error"
           }
         };
       }
@@ -371,15 +288,29 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (action === "registerWebPixel") {
       try {
-        console.log("【App】開始註冊 Web Pixel Extension...");
-
-        // 檢查是否已經存在
-        const { body: existingPixels } = await (admin as any).rest.get({ path: 'web_pixels' });
-        const ourPixel = existingPixels.web_pixels?.find((pixel: any) =>
+        console.log("【App】開始用 GraphQL 註冊 Web Pixel Extension...");
+        // 先查詢是否已存在
+        const query = `
+          query {
+            webPixels(first: 10) {
+              edges {
+                node {
+                  id
+                  title
+                  status
+                }
+              }
+            }
+          }
+        `;
+        const response = await admin.graphql(query);
+        const data = await response.json();
+        const webPixels = data.data.webPixels.edges.map((edge: any) => edge.node);
+        const ourPixel = webPixels.find((pixel: any) =>
           pixel.title === 'DDKT Analysis Tracking' ||
-          pixel.title === 'ddkt-tracking'
+          pixel.title === 'ddkt-tracking' ||
+          pixel.title?.includes('ddkt')
         );
-
         if (ourPixel) {
           console.log("【App】Web Pixel Extension 已存在，ID:", ourPixel.id);
           return {
@@ -389,25 +320,49 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             extensionId: ourPixel.id
           };
         }
-
-        console.log("【App】Web Pixel Extension 不存在，嘗試安裝...");
-
-        // 注意：Web Pixel Extension 的安裝通常需要通過 Partner API
-        // 這裡我們提供指導而不是直接安裝
-        console.log("【App】無法通過此介面直接安裝 Extension，提供安裝指導");
-
+        // 註冊（建立）Web Pixel
+        const mutation = `
+          mutation webPixelCreate($input: WebPixelInput!) {
+            webPixelCreate(webPixel: $input) {
+              userErrors {
+                field
+                message
+              }
+              webPixel {
+                id
+                title
+                status
+              }
+            }
+          }
+        `;
+        const variables = {
+          input: {
+            title: "DDKT Analysis Tracking",
+            settings: "{}"
+          }
+        };
+        const createResponse = await admin.graphql(mutation, { variables });
+        const createData = await createResponse.json();
+        const userErrors = createData.data.webPixelCreate.userErrors;
+        const createdPixel = createData.data.webPixelCreate.webPixel;
+        if (userErrors && userErrors.length > 0) {
+          return {
+            type: "registerWebPixel",
+            success: false,
+            error: {
+              message: userErrors.map((e: any) => e.message).join(", ") || "建立失敗",
+              status: 400,
+              statusText: "GraphQL User Error"
+            }
+          };
+        }
         return {
           type: "registerWebPixel",
-          success: false,
-          message: "無法通過此介面直接安裝 Extension。請按照以下步驟操作：",
-          instructions: [
-            "1. 到 Shopify Partner 後台確認 extension 已部署",
-            "2. 重新安裝 App 到商店",
-            "3. 到商店後台「設定 > 顧客事件」新增像素",
-            "4. 選擇「應用程式像素」並選擇我們的 App"
-          ]
+          success: true,
+          message: "Web Pixel Extension 註冊成功",
+          extensionId: createdPixel.id
         };
-
       } catch (error: any) {
         console.error("【App】Web Pixel Extension 註冊失敗:", error?.message, error?.stack);
         return {
@@ -415,6 +370,66 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           success: false,
           error: {
             message: error?.message || "Web Pixel Extension 註冊失敗",
+            status: error?.status || 500,
+            statusText: error?.statusText || "Internal Server Error"
+          }
+        };
+      }
+    }
+
+    if (action === "deleteWebPixel") {
+      try {
+        const formPixelId = formData.get("pixelId");
+        if (!formPixelId) {
+          return {
+            type: "deleteWebPixel",
+            success: false,
+            error: {
+              message: "請提供要刪除的 Web Pixel ID",
+              status: 400,
+              statusText: "Bad Request"
+            }
+          };
+        }
+        const mutation = `
+          mutation webPixelDelete($id: ID!) {
+            webPixelDelete(id: $id) {
+              deletedWebPixelId
+              userErrors {
+                field
+                message
+              }
+            }
+          }
+        `;
+        const variables = { id: formPixelId };
+        const deleteResponse = await admin.graphql(mutation, { variables });
+        const deleteData = await deleteResponse.json();
+        const userErrors = deleteData.data.webPixelDelete.userErrors;
+        if (userErrors && userErrors.length > 0) {
+          return {
+            type: "deleteWebPixel",
+            success: false,
+            error: {
+              message: userErrors.map((e: any) => e.message).join(", ") || "刪除失敗",
+              status: 400,
+              statusText: "GraphQL User Error"
+            }
+          };
+        }
+        return {
+          type: "deleteWebPixel",
+          success: true,
+          message: "Web Pixel Extension 刪除成功",
+          deletedId: deleteData.data.webPixelDelete.deletedWebPixelId
+        };
+      } catch (error: any) {
+        console.error("【App】Web Pixel Extension 刪除失敗:", error?.message, error?.stack);
+        return {
+          type: "deleteWebPixel",
+          success: false,
+          error: {
+            message: error?.message || "Web Pixel Extension 刪除失敗",
             status: error?.status || 500,
             statusText: error?.statusText || "Internal Server Error"
           }
