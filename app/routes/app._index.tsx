@@ -156,7 +156,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (action === "registerScriptTag") {
       try {
-        const base64 = Buffer.from(admin.session?.shop || "").toString('base64').replace(/=+$/, '');
+        const base64 = Buffer.from(authResult.session?.shop || "").toString('base64').replace(/=+$/, '');
         const trackingId = `spfy-${base64}`;
         const appUrl = process.env.SHOPIFY_APP_URL || 'https://shopify-ddkt-analysis-tracking.vercel.app';
         const scriptUrl = `${appUrl}/pixel.js?tid=${trackingId}`;
@@ -169,13 +169,29 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               src: scriptUrl,
             },
           },
-          type: 'application/json',
         });
+        let scriptTag = null;
+        if (typeof result.body?.getReader === 'function') {
+          // ReadableStream: 需解析為 JSON
+          const reader = result.body.getReader();
+          const chunks = [];
+          let done, value;
+          while (!(done = (await reader.read()).done)) {
+            value = (await reader.read()).value;
+            if (value) chunks.push(...value);
+          }
+          const jsonString = new TextDecoder().decode(new Uint8Array(chunks));
+          try {
+            scriptTag = JSON.parse(jsonString)?.script_tag || null;
+          } catch { }
+        } else if ((result.body as any)?.script_tag) {
+          scriptTag = (result.body as any).script_tag;
+        }
         return {
           type: "registerScriptTag",
           success: true,
           message: "ScriptTag 註冊成功",
-          scriptTag: result.body?.script_tag || null,
+          scriptTag,
         };
       } catch (error: any) {
         return {
@@ -509,13 +525,13 @@ export default function Index() {
                 </Button>
 
                 {fetcher.data?.type === "registerScriptTag" && (
-                  fetcher.data.success ? (
+                  (fetcher.data as any).success ? (
                     <Banner tone="success" title="ScriptTag 註冊成功">
                       <p>ScriptTag 已成功註冊！</p>
                     </Banner>
                   ) : (
                     <Banner tone="critical" title="ScriptTag 註冊失敗">
-                      <p>錯誤: {fetcher.data.error?.message || '未知錯誤'}</p>
+                      <p>錯誤: {(fetcher.data as any).error?.message || '未知錯誤'}</p>
                     </Banner>
                   )
                 )}

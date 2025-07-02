@@ -141,7 +141,7 @@ const shopify = shopifyApp({
             await admin.rest.delete({ path: `script_tags/${tag.id}` });
             console.log('【afterAuth】[步驟2] 已刪除舊 ScriptTag:', tag.id);
           } catch (deleteErr) {
-            console.error('【afterAuth】[步驟2] 刪除 ScriptTag 失敗:', tag.id, deleteErr?.message, deleteErr?.stack);
+            console.error('【afterAuth】[步驟2] 刪除 ScriptTag 失敗:', tag.id, (deleteErr as any)?.message, (deleteErr as any)?.stack);
           }
         }
       }
@@ -161,7 +161,7 @@ const shopify = shopifyApp({
         });
         console.log('【afterAuth】[步驟3] ScriptTag 註冊成功:', JSON.stringify(result.body));
       } catch (registerErr) {
-        console.error('【afterAuth】[步驟3] ScriptTag 註冊失敗:', registerErr?.message, registerErr?.stack);
+        console.error('【afterAuth】[步驟3] ScriptTag 註冊失敗:', (registerErr as any)?.message, (registerErr as any)?.stack);
         throw registerErr;
       }
 
@@ -170,7 +170,7 @@ const shopify = shopifyApp({
         const { body: afterBody } = await admin.rest.get({ path: 'script_tags' });
         console.log('【afterAuth】[步驟4] 註冊後所有 ScriptTag:', JSON.stringify(afterBody.script_tags));
       } catch (finalQueryErr) {
-        console.error('【afterAuth】[步驟4] 註冊後查詢 ScriptTag 失敗:', finalQueryErr?.message, finalQueryErr?.stack);
+        console.error('【afterAuth】[步驟4] 註冊後查詢 ScriptTag 失敗:', (finalQueryErr as any)?.message, (finalQueryErr as any)?.stack);
       }
 
       console.log('【afterAuth】安裝流程完成！');
