@@ -125,9 +125,10 @@ const shopify = shopifyApp({
 
       // 檢查 Web Pixel Extension 狀態
       try {
-        console.log('【afterAuth】[Web Pixel] 檢查 Web Pixel Extension 狀態...');
+        console.log('【Extension】檢查 Web Pixel Extension 狀態...');
         const { body: webPixels } = await admin.rest.get({ path: 'web_pixels' });
-        console.log('【afterAuth】[Web Pixel] 現有 Web Pixels:', JSON.stringify(webPixels.web_pixels || []));
+        console.log('【Extension】現有 Web Pixels 數量:', webPixels.web_pixels?.length || 0);
+        console.log('【Extension】所有 Web Pixels 標題:', webPixels.web_pixels?.map((p: any) => p.title) || []);
 
         // 檢查是否有我們的 extension
         const ourPixel = webPixels.web_pixels?.find((pixel: any) =>
@@ -137,17 +138,18 @@ const shopify = shopifyApp({
         );
 
         if (ourPixel) {
-          console.log('【afterAuth】[Web Pixel] 找到我們的 Web Pixel Extension:', JSON.stringify(ourPixel));
-          console.log('【afterAuth】[Web Pixel] Extension ID:', ourPixel.id);
-          console.log('【afterAuth】[Web Pixel] Extension 狀態:', ourPixel.status);
-          console.log('【afterAuth】[Web Pixel] Extension 標題:', ourPixel.title);
+          console.log('【Extension】✅ 找到我們的 Web Pixel Extension');
+          console.log('【Extension】Extension ID:', ourPixel.id);
+          console.log('【Extension】Extension 狀態:', ourPixel.status);
+          console.log('【Extension】Extension 標題:', ourPixel.title);
+          console.log('【Extension】Extension 詳細資訊:', JSON.stringify(ourPixel, null, 2));
         } else {
-          console.log('【afterAuth】[Web Pixel] 未找到我們的 Web Pixel Extension');
-          console.log('【afterAuth】[Web Pixel] 所有 Web Pixels 標題:', webPixels.web_pixels?.map((p: any) => p.title));
+          console.log('【Extension】❌ 未找到我們的 Web Pixel Extension');
+          console.log('【Extension】需要手動安裝或檢查 Partner 後台設定');
         }
       } catch (webPixelErr) {
-        console.error('【afterAuth】[Web Pixel] 查詢 Web Pixels 失敗:', (webPixelErr as any)?.message);
-        console.error('【afterAuth】[Web Pixel] 錯誤詳情:', (webPixelErr as any)?.stack);
+        console.error('【Extension】❌ 查詢 Web Pixels 失敗:', (webPixelErr as any)?.message);
+        console.error('【Extension】錯誤詳情:', (webPixelErr as any)?.stack);
       }
 
       // 查詢現有 ScriptTag
