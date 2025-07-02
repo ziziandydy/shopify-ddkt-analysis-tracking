@@ -125,8 +125,26 @@ const shopify = shopifyApp({
 
       // 檢查 Web Pixel Extension 狀態
       try {
-        console.log('【Extension】檢查 Web Pixel Extension 狀態...');
+        console.log('【Extension】=== 開始檢查 Web Pixel Extension 狀態 ===');
+        console.log('【Extension】觸發時間:', new Date().toISOString());
+        console.log('【Extension】商店:', shop);
+        console.log('【Extension】環境變數:', {
+          SHOPIFY_APP_URL: process.env.SHOPIFY_APP_URL,
+          NODE_ENV: process.env.NODE_ENV
+        });
+
+        // 新增 debug log
+        const accessToken = admin.session?.accessToken || admin.session?.access_token;
+        console.log("[DEBUG] Extension 檢查 - Access Token:", accessToken ? "存在" : "不存在");
+        const shopDomain = admin.session?.shop || admin.session?.shopDomain;
+        console.log("[DEBUG] Extension 檢查 - Shop Domain:", shopDomain);
+        console.log("[DEBUG] Extension 檢查 - admin.rest.get:", typeof admin.rest.get);
+        console.log("[DEBUG] Extension 檢查 - 準備查詢 web_pixels，header:", {
+          "X-Shopify-Access-Token": accessToken ? "存在" : "不存在"
+        });
+
         const { body: webPixels } = await admin.rest.get({ path: 'web_pixels' });
+        console.log('【Extension】Web Pixels API 回應:', JSON.stringify(webPixels));
         console.log('【Extension】現有 Web Pixels 數量:', webPixels.web_pixels?.length || 0);
         console.log('【Extension】所有 Web Pixels 標題:', webPixels.web_pixels?.map((p: any) => p.title) || []);
 
@@ -142,14 +160,37 @@ const shopify = shopifyApp({
           console.log('【Extension】Extension ID:', ourPixel.id);
           console.log('【Extension】Extension 狀態:', ourPixel.status);
           console.log('【Extension】Extension 標題:', ourPixel.title);
+          console.log('【Extension】Extension 創建時間:', ourPixel.created_at);
+          console.log('【Extension】Extension 更新時間:', ourPixel.updated_at);
           console.log('【Extension】Extension 詳細資訊:', JSON.stringify(ourPixel, null, 2));
         } else {
           console.log('【Extension】❌ 未找到我們的 Web Pixel Extension');
-          console.log('【Extension】需要手動安裝或檢查 Partner 後台設定');
+          console.log('【Extension】可能的原因:');
+          console.log('【Extension】1. Extension 尚未在 Partner 後台部署');
+          console.log('【Extension】2. Extension 名稱不匹配');
+          console.log('【Extension】3. 需要重新安裝 App');
+          console.log('【Extension】4. Partner 後台設定問題');
+          console.log('【Extension】建議操作:');
+          console.log('【Extension】1. 檢查 Partner 後台 Extension 設定');
+          console.log('【Extension】2. 重新執行 npx shopify app deploy');
+          console.log('【Extension】3. 重新安裝 App 到商店');
+          console.log('【Extension】4. 到商店後台手動新增像素');
         }
+
+        console.log('【Extension】=== Web Pixel Extension 檢查完成 ===');
       } catch (webPixelErr) {
         console.error('【Extension】❌ 查詢 Web Pixels 失敗:', (webPixelErr as any)?.message);
         console.error('【Extension】錯誤詳情:', (webPixelErr as any)?.stack);
+        console.error('【Extension】錯誤狀態:', {
+          status: (webPixelErr as any)?.status,
+          statusText: (webPixelErr as any)?.statusText,
+          name: (webPixelErr as any)?.name
+        });
+        console.error('【Extension】可能的原因:');
+        console.error('【Extension】1. API 權限不足');
+        console.error('【Extension】2. Access Token 無效');
+        console.error('【Extension】3. API 版本不支援');
+        console.error('【Extension】4. 網路連接問題');
       }
 
       // 查詢現有 ScriptTag

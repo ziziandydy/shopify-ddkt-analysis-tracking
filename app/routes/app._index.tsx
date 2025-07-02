@@ -156,10 +156,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (action === "registerScriptTag") {
       try {
+        console.log("【App】開始註冊 ScriptTag...");
         const base64 = Buffer.from(authResult.session?.shop || "").toString('base64').replace(/=+$/, '');
         const trackingId = `spfy-${base64}`;
         const appUrl = process.env.SHOPIFY_APP_URL || 'https://shopify-ddkt-analysis-tracking.vercel.app';
         const scriptUrl = `${appUrl}/pixel.js?tid=${trackingId}`;
+
+        console.log("【App】ScriptTag 註冊參數:", {
+          trackingId,
+          appUrl,
+          scriptUrl,
+          shop: authResult.session?.shop
+        });
+
         // 註冊 ScriptTag
         const result = await admin.rest.post({
           path: 'script_tags',
@@ -170,6 +179,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             },
           },
         });
+
+        console.log("【App】ScriptTag 註冊 API 回應:", JSON.stringify(result.body));
+
         let scriptTag = null;
         if (typeof result.body?.getReader === 'function') {
           // ReadableStream: 需解析為 JSON
@@ -187,6 +199,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         } else if ((result.body as any)?.script_tag) {
           scriptTag = (result.body as any).script_tag;
         }
+
+        console.log("【App】ScriptTag 註冊成功:", JSON.stringify(scriptTag));
+
         return {
           type: "registerScriptTag",
           success: true,
@@ -194,11 +209,166 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           scriptTag,
         };
       } catch (error: any) {
+        console.error("【App】ScriptTag 註冊失敗:", error?.message, error?.stack);
         return {
           type: "registerScriptTag",
           success: false,
           error: {
             message: error?.message || "ScriptTag 註冊失敗",
+            status: error?.status || 500,
+            statusText: error?.statusText || "Internal Server Error"
+          }
+        };
+      }
+    }
+
+    if (action === "checkWebPixels") {
+      try {
+        console.log("【App】開始檢查 Web Pixel Extensions...");
+        console.log("【App】Admin 物件類型:", typeof admin);
+        console.log("【App】Admin 物件方法:", Object.keys(admin));
+
+        // 使用類型斷言來處理 admin 物件
+        const adminAny = admin as any;
+
+        // 檢查 admin.rest 是否存在
+        if (!adminAny.rest) {
+          console.error("【App】Admin 物件缺少 rest 屬性");
+          return {
+            type: "webPixels",
+            success: false,
+            error: {
+              message: "Admin 物件結構不正確：缺少 rest 屬性",
+              status: 500,
+              statusText: "Internal Server Error"
+            }
+          };
+        }
+
+        // 新增 debug log
+        const accessToken = adminAny.session?.accessToken || adminAny.session?.access_token;
+        console.log("[DEBUG] Web Pixels 檢查 - Access Token:", accessToken ? "存在" : "不存在");
+        const shopDomain = adminAny.session?.shop || adminAny.session?.shopDomain;
+        console.log("[DEBUG] Web Pixels 檢查 - Shop Domain:", shopDomain);
+        console.log("[DEBUG] Web Pixels 檢查 - adminAny.rest.get:", typeof adminAny.rest.get);
+        console.log("[DEBUG] Web Pixels 檢查 - 準備查詢 web_pixels，header:", {
+          "X-Shopify-Access-Token": accessToken ? "存在" : "不存在"
+        });
+
+        // 查詢 Web Pixels
+        const response = await adminAny.rest.get({ path: 'web_pixels' });
+        let body;
+        if (typeof response.json === 'function') {
+          body = await response.json();
+        } else {
+          body = response.body;
+        }
+
+        console.log("【App】Web Pixels API 回應:", JSON.stringify(body));
+
+        // 防呆：確保 web_pixels 一定是陣列
+        const webPixels = Array.isArray(body?.web_pixels) ? body.web_pixels : [];
+        if (!Array.isArray(body?.web_pixels)) {
+          console.error("[Web Pixels] Shopify API 回傳格式異常，無法取得 web_pixels:", body);
+        }
+
+        // 檢查是否有我們的 extension
+        const ourPixel = webPixels.find((pixel: any) =>
+          pixel.title === 'DDKT Analysis Tracking' ||
+          pixel.title === 'ddkt-tracking' ||
+          pixel.title?.includes('ddkt')
+        );
+
+        console.log("【App】Web Pixels 檢查結果:", {
+          totalCount: webPixels.length,
+          ourPixelFound: !!ourPixel,
+          ourPixel: ourPixel ? {
+            id: ourPixel.id,
+            title: ourPixel.title,
+            status: ourPixel.status
+          } : null
+        });
+
+        return {
+          type: "webPixels",
+          success: true,
+          allWebPixels: webPixels,
+          ourPixel,
+          totalCount: webPixels.length,
+          ourCount: ourPixel ? 1 : 0
+        };
+      } catch (error: any) {
+        console.error("【App】Web Pixels 查詢失敗:", error?.message, error?.stack);
+        console.error("【App】Web Pixels 錯誤詳情:", {
+          message: error?.message,
+          stack: error?.stack,
+          name: error?.name,
+          status: error?.status,
+          statusText: error?.statusText
+        });
+
+        return {
+          type: "webPixels",
+          success: false,
+          error: {
+            message: error?.message || "未知錯誤",
+            status: error?.status || 500,
+            statusText: error?.statusText || "Internal Server Error",
+            details: {
+              name: error?.name,
+              stack: error?.stack
+            }
+          }
+        };
+      }
+    }
+
+    if (action === "registerWebPixel") {
+      try {
+        console.log("【App】開始註冊 Web Pixel Extension...");
+
+        // 檢查是否已經存在
+        const { body: existingPixels } = await (admin as any).rest.get({ path: 'web_pixels' });
+        const ourPixel = existingPixels.web_pixels?.find((pixel: any) =>
+          pixel.title === 'DDKT Analysis Tracking' ||
+          pixel.title === 'ddkt-tracking'
+        );
+
+        if (ourPixel) {
+          console.log("【App】Web Pixel Extension 已存在，ID:", ourPixel.id);
+          return {
+            type: "registerWebPixel",
+            success: true,
+            message: "Web Pixel Extension 已經存在",
+            extensionId: ourPixel.id
+          };
+        }
+
+        console.log("【App】Web Pixel Extension 不存在，嘗試安裝...");
+
+        // 注意：Web Pixel Extension 的安裝通常需要通過 Partner API
+        // 這裡我們提供指導而不是直接安裝
+        console.log("【App】無法通過此介面直接安裝 Extension，提供安裝指導");
+
+        return {
+          type: "registerWebPixel",
+          success: false,
+          message: "無法通過此介面直接安裝 Extension。請按照以下步驟操作：",
+          instructions: [
+            "1. 到 Shopify Partner 後台確認 extension 已部署",
+            "2. 重新安裝 App 到商店",
+            "3. 到商店後台「設定 > 顧客事件」新增像素",
+            "4. 選擇「應用程式像素」並選擇我們的 App"
+          ]
+        };
+
+      } catch (error: any) {
+        console.error("【App】Web Pixel Extension 註冊失敗:", error?.message, error?.stack);
+        return {
+          type: "registerWebPixel",
+          success: false,
+          error: {
+            message: error?.message || "Web Pixel Extension 註冊失敗",
             status: error?.status || 500,
             statusText: error?.statusText || "Internal Server Error"
           }
@@ -330,9 +500,13 @@ export default function Index() {
   const generateProduct = () => fetcher.submit({ action: "generateProduct" }, { method: "POST" });
   const checkScriptTags = () => fetcher.submit({ action: "checkScriptTags" }, { method: "POST" });
   const registerScriptTag = () => fetcher.submit({ action: "registerScriptTag" }, { method: "POST" });
+  const checkWebPixels = () => fetcher.submit({ action: "checkWebPixels" }, { method: "POST" });
+  const registerWebPixel = () => fetcher.submit({ action: "registerWebPixel" }, { method: "POST" });
 
   const scriptTagsData = fetcher.data?.type === "scriptTags" ? fetcher.data as any : null;
   const productData = fetcher.data?.type === "product" ? fetcher.data as any : null;
+  const webPixelsData = fetcher.data?.type === "webPixels" ? fetcher.data as any : null;
+  const registerWebPixelData = fetcher.data?.type === "registerWebPixel" ? fetcher.data as any : null;
 
   return (
     <Page>
@@ -348,7 +522,16 @@ export default function Index() {
               <BlockStack gap="500">
                 <BlockStack gap="200">
                   <Text as="h2" variant="headingMd">
-                    Congrats on creating a new Shopify app 🎉
+                    歡迎使用 DDKT 分析追蹤應用程式 🎉
+                    歡迎到{" "}
+                    <Link
+                      url="https://insight.ghtinc.com"
+                      target="_blank"
+                      removeUnderline
+                    >
+                      DDKT Dashboard
+                    </Link>{" "}
+                    查看進站訪客的站外行為分析！
                   </Text>
                   <Text variant="bodyMd" as="p">
                     This embedded app template uses{" "}
@@ -534,6 +717,134 @@ export default function Index() {
                       <p>錯誤: {(fetcher.data as any).error?.message || '未知錯誤'}</p>
                     </Banner>
                   )
+                )}
+              </BlockStack>
+            </Card>
+          </Layout.Section>
+
+          <Layout.Section>
+            <Card>
+              <BlockStack gap="500">
+                <BlockStack gap="200">
+                  <Text as="h2" variant="headingMd">
+                    Web Pixel Extension 檢查工具 🔍
+                  </Text>
+                  <Text variant="bodyMd" as="p">
+                    檢查您的 Web Pixel Extension 是否已成功安裝到商店中。
+                  </Text>
+                </BlockStack>
+
+                <Button
+                  loading={isLoading && fetcher.formData?.get("action") === "checkWebPixels"}
+                  onClick={checkWebPixels}
+                  variant="secondary"
+                >
+                  檢查 Web Pixel Extension 狀態
+                </Button>
+
+                {webPixelsData && (
+                  <BlockStack gap="400">
+                    {webPixelsData.success ? (
+                      <>
+                        <Banner tone="success" title="Web Pixel Extension 檢查完成">
+                          <p>總共找到 {webPixelsData.totalCount} 個 Web Pixel Extension，其中 {webPixelsData.ourCount} 個是我們的 Extension。</p>
+                        </Banner>
+
+                        {webPixelsData.ourPixel ? (
+                          <BlockStack gap="300">
+                            <Text as="h3" variant="headingMd">
+                              我們的 Web Pixel Extension
+                            </Text>
+                            <Box
+                              padding="400"
+                              background="bg-surface-active"
+                              borderWidth="025"
+                              borderRadius="200"
+                              borderColor="border"
+                            >
+                              <BlockStack gap="200">
+                                <Text as="h4" variant="headingSm">Extension 詳細資訊</Text>
+                                <Text as="p" variant="bodyMd"><strong>ID:</strong> {webPixelsData.ourPixel.id}</Text>
+                                <Text as="p" variant="bodyMd"><strong>標題:</strong> {webPixelsData.ourPixel.title}</Text>
+                                <Text as="p" variant="bodyMd"><strong>狀態:</strong> {webPixelsData.ourPixel.status}</Text>
+                                <Text as="p" variant="bodyMd"><strong>創建時間:</strong> {new Date(webPixelsData.ourPixel.created_at).toLocaleString()}</Text>
+                                <Text as="p" variant="bodyMd"><strong>更新時間:</strong> {new Date(webPixelsData.ourPixel.updated_at).toLocaleString()}</Text>
+                              </BlockStack>
+                            </Box>
+                          </BlockStack>
+                        ) : (
+                          <Banner tone="warning" title="未找到我們的 Web Pixel Extension">
+                            <p>沒有找到我們的 Web Pixel Extension。這可能表示 Extension 尚未安裝或 Partner 後台設定有問題。</p>
+                            {webPixelsData.allWebPixels && webPixelsData.allWebPixels.length > 0 && (
+                              <div style={{ marginTop: "10px" }}>
+                                <p><strong>現有的 Web Pixel Extensions:</strong></p>
+                                <ul>
+                                  {webPixelsData.allWebPixels.map((pixel: any, index: number) => (
+                                    <li key={index}>
+                                      <strong>{pixel.title}</strong> (ID: {pixel.id}, 狀態: {pixel.status})
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </Banner>
+                        )}
+                      </>
+                    ) : (
+                      <Banner tone="critical" title="Web Pixel Extension 檢查失敗">
+                        <p>錯誤: {webPixelsData.error?.message || '未知錯誤'}</p>
+                        {webPixelsData.error?.status && (
+                          <p>狀態碼: {webPixelsData.error.status} {webPixelsData.error.statusText}</p>
+                        )}
+                      </Banner>
+                    )}
+                  </BlockStack>
+                )}
+              </BlockStack>
+            </Card>
+          </Layout.Section>
+
+          <Layout.Section>
+            <Card>
+              <BlockStack gap="500">
+                <BlockStack gap="200">
+                  <Text as="h2" variant="headingMd">
+                    Web Pixel Extension 安裝指導 📋
+                  </Text>
+                  <Text variant="bodyMd" as="p">
+                    由於 Web Pixel Extension 需要通過 Partner API 安裝，請按照以下步驟手動安裝。
+                  </Text>
+                </BlockStack>
+
+                <Button
+                  loading={isLoading && fetcher.formData?.get("action") === "registerWebPixel"}
+                  onClick={registerWebPixel}
+                  variant="secondary"
+                >
+                  檢查安裝狀態
+                </Button>
+
+                {registerWebPixelData && (
+                  <BlockStack gap="400">
+                    {registerWebPixelData.success ? (
+                      <Banner tone="success" title="Web Pixel Extension 已存在">
+                        <p>Extension 已經存在，ID: {registerWebPixelData.extensionId}</p>
+                      </Banner>
+                    ) : (
+                      <Banner tone="info" title="安裝指導">
+                        <p>{registerWebPixelData.message}</p>
+                        {registerWebPixelData.instructions && (
+                          <div style={{ marginTop: "10px" }}>
+                            <ol>
+                              {registerWebPixelData.instructions.map((instruction: string, index: number) => (
+                                <li key={index} style={{ marginBottom: "5px" }}>{instruction}</li>
+                              ))}
+                            </ol>
+                          </div>
+                        )}
+                      </Banner>
+                    )}
+                  </BlockStack>
                 )}
               </BlockStack>
             </Card>
