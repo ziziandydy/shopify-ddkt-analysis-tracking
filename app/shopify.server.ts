@@ -124,62 +124,59 @@ const shopify = shopifyApp({
       console.log('【afterAuth】shopInfo 取得成功:', JSON.stringify(shopInfo.body));
 
       // 查詢現有 ScriptTag
-      console.log('【afterAuth】查詢現有 ScriptTag...');
+      console.log('【afterAuth】[步驟1] 查詢現有 ScriptTag...');
       const { body } = await admin.rest.get({ path: 'script_tags' });
       if (body && Array.isArray(body.script_tags)) {
         console.log("[DEBUG] ScriptTag API 回傳 script_tags 數量:", body.script_tags.length);
       } else {
         console.log("[DEBUG] ScriptTag API 回傳內容:", typeof body, body && Object.keys(body));
       }
-      console.log('【afterAuth】註冊前所有 ScriptTag:', JSON.stringify(body.script_tags));
+      console.log('【afterAuth】[步驟1] 查詢完成，註冊前所有 ScriptTag:', JSON.stringify(body.script_tags));
 
       // 刪除舊的 ScriptTag
       for (const tag of body.script_tags) {
         if (tag.src && tag.src.startsWith(`${appUrl}/pixel.js`)) {
-          console.log('【afterAuth】刪除舊 ScriptTag:', tag.id, tag.src);
-          await admin.rest.delete({ path: `script_tags/${tag.id}` });
-          console.log('【afterAuth】已刪除舊 ScriptTag:', tag.id);
+          try {
+            console.log('【afterAuth】[步驟2] 刪除舊 ScriptTag:', tag.id, tag.src);
+            await admin.rest.delete({ path: `script_tags/${tag.id}` });
+            console.log('【afterAuth】[步驟2] 已刪除舊 ScriptTag:', tag.id);
+          } catch (deleteErr) {
+            console.error('【afterAuth】[步驟2] 刪除 ScriptTag 失敗:', tag.id, deleteErr?.message, deleteErr?.stack);
+          }
         }
       }
 
       // 註冊新的 ScriptTag
-      console.log('【afterAuth】註冊新的 ScriptTag...');
-      const result = await admin.rest.post({
-        path: 'script_tags',
-        data: {
-          script_tag: {
-            event: 'onload',
-            src: scriptUrl,
+      try {
+        console.log('【afterAuth】[步驟3] 註冊新的 ScriptTag...');
+        const result = await admin.rest.post({
+          path: 'script_tags',
+          data: {
+            script_tag: {
+              event: 'onload',
+              src: scriptUrl,
+            },
           },
-        },
-        type: 'application/json',
-      });
-      console.log('【afterAuth】ScriptTag 註冊成功:', JSON.stringify(result.body));
+          type: 'application/json',
+        });
+        console.log('【afterAuth】[步驟3] ScriptTag 註冊成功:', JSON.stringify(result.body));
+      } catch (registerErr) {
+        console.error('【afterAuth】[步驟3] ScriptTag 註冊失敗:', registerErr?.message, registerErr?.stack);
+        throw registerErr;
+      }
 
       // 再查詢一次 ScriptTag 確認
-      const { body: afterBody } = await admin.rest.get({ path: 'script_tags' });
-      console.log('【afterAuth】註冊後所有 ScriptTag:', JSON.stringify(afterBody.script_tags));
+      try {
+        const { body: afterBody } = await admin.rest.get({ path: 'script_tags' });
+        console.log('【afterAuth】[步驟4] 註冊後所有 ScriptTag:', JSON.stringify(afterBody.script_tags));
+      } catch (finalQueryErr) {
+        console.error('【afterAuth】[步驟4] 註冊後查詢 ScriptTag 失敗:', finalQueryErr?.message, finalQueryErr?.stack);
+      }
 
       console.log('【afterAuth】安裝流程完成！');
     } catch (e: any) {
-      console.error('【afterAuth】ScriptTag 註冊流程失敗:', e);
-      console.error('【afterAuth】錯誤詳情:', {
-        message: e?.message,
-        stack: e?.stack,
-        code: e?.code,
-        status: e?.status,
-        statusText: e?.statusText
-      });
-
-      // 如果是 API 錯誤，記錄更多詳情
-      if (e?.status) {
-        console.error('【afterAuth】API 錯誤狀態:', e.status, e.statusText);
-        if (e?.body) {
-          console.error('【afterAuth】API 錯誤回應:', JSON.stringify(e.body));
-        }
-      }
-
-      throw e; // 重新拋出錯誤以確保安裝失敗
+      console.error('【afterAuth】ScriptTag 註冊流程失敗:', e?.message, e?.stack);
+      throw e;
     }
   },
 });

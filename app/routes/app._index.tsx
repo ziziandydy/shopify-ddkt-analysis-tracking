@@ -154,6 +154,42 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     }
 
+    if (action === "registerScriptTag") {
+      try {
+        const base64 = Buffer.from(admin.session?.shop || "").toString('base64').replace(/=+$/, '');
+        const trackingId = `spfy-${base64}`;
+        const appUrl = process.env.SHOPIFY_APP_URL || 'https://shopify-ddkt-analysis-tracking.vercel.app';
+        const scriptUrl = `${appUrl}/pixel.js?tid=${trackingId}`;
+        // 註冊 ScriptTag
+        const result = await admin.rest.post({
+          path: 'script_tags',
+          data: {
+            script_tag: {
+              event: 'onload',
+              src: scriptUrl,
+            },
+          },
+          type: 'application/json',
+        });
+        return {
+          type: "registerScriptTag",
+          success: true,
+          message: "ScriptTag 註冊成功",
+          scriptTag: result.body?.script_tag || null,
+        };
+      } catch (error: any) {
+        return {
+          type: "registerScriptTag",
+          success: false,
+          error: {
+            message: error?.message || "ScriptTag 註冊失敗",
+            status: error?.status || 500,
+            statusText: error?.statusText || "Internal Server Error"
+          }
+        };
+      }
+    }
+
     // 原有的產品生成邏輯
     const color = ["Red", "Orange", "Yellow", "Green"][
       Math.floor(Math.random() * 4)
@@ -277,6 +313,7 @@ export default function Index() {
 
   const generateProduct = () => fetcher.submit({ action: "generateProduct" }, { method: "POST" });
   const checkScriptTags = () => fetcher.submit({ action: "checkScriptTags" }, { method: "POST" });
+  const registerScriptTag = () => fetcher.submit({ action: "registerScriptTag" }, { method: "POST" });
 
   const scriptTagsData = fetcher.data?.type === "scriptTags" ? fetcher.data as any : null;
   const productData = fetcher.data?.type === "product" ? fetcher.data as any : null;
@@ -446,6 +483,41 @@ export default function Index() {
                       </Banner>
                     )}
                   </BlockStack>
+                )}
+              </BlockStack>
+            </Card>
+          </Layout.Section>
+
+          <Layout.Section>
+            <Card>
+              <BlockStack gap="500">
+                <BlockStack gap="200">
+                  <Text as="h2" variant="headingMd">
+                    ScriptTag 註冊工具 📝
+                  </Text>
+                  <Text variant="bodyMd" as="p">
+                    手動註冊 ScriptTag 到商店中。
+                  </Text>
+                </BlockStack>
+
+                <Button
+                  loading={isLoading && fetcher.formData?.get("action") === "registerScriptTag"}
+                  onClick={registerScriptTag}
+                  variant="secondary"
+                >
+                  手動註冊 ScriptTag
+                </Button>
+
+                {fetcher.data?.type === "registerScriptTag" && (
+                  fetcher.data.success ? (
+                    <Banner tone="success" title="ScriptTag 註冊成功">
+                      <p>ScriptTag 已成功註冊！</p>
+                    </Banner>
+                  ) : (
+                    <Banner tone="critical" title="ScriptTag 註冊失敗">
+                      <p>錯誤: {fetcher.data.error?.message || '未知錯誤'}</p>
+                    </Banner>
+                  )
                 )}
               </BlockStack>
             </Card>
