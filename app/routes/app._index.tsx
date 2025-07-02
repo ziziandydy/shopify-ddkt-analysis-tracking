@@ -102,7 +102,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           "X-Shopify-Access-Token": accessToken ? "存在" : "不存在"
         });
 
-        const { body } = await adminAny.rest.get({ path: 'script_tags' });
+        // 查詢 ScriptTag
+        const response = await adminAny.rest.get({ path: 'script_tags' });
+        // 解析 response，支援 response.json() 或 response.body
+        let body;
+        if (typeof response.json === 'function') {
+          body = await response.json();
+        } else {
+          body = response.body;
+        }
         // 防呆：確保 script_tags 一定是陣列
         const scriptTags = Array.isArray(body?.script_tags) ? body.script_tags : [];
         if (!Array.isArray(body?.script_tags)) {
