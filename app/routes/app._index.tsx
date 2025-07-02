@@ -91,8 +91,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
         // 新增 debug log
         const accessToken = adminAny.session?.accessToken || adminAny.session?.access_token;
-        console.log("[DEBUG] Access Token:", accessToken ? "存在" : "不存在");
         const shopDomain = adminAny.session?.shop || adminAny.session?.shopDomain;
+        console.log("[DEBUG] Access Token:", accessToken ? "存在" : "不存在");
         console.log("[DEBUG] Shop Domain:", shopDomain);
         console.log("[DEBUG] adminAny.rest.get:", typeof adminAny.rest.get);
         console.log("[DEBUG] SHOPIFY_API_KEY:", process.env.SHOPIFY_API_KEY ? "存在" : "不存在");
@@ -239,9 +239,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (action === "checkWebPixels") {
       try {
         console.log("【App】開始檢查 Web Pixel Extensions...");
-        console.log("【App】Admin 物件類型:", typeof admin);
-        console.log("【App】Admin 物件方法:", Object.keys(admin));
-
         // 使用類型斷言來處理 admin 物件
         const adminAny = admin as any;
 
@@ -261,8 +258,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
         // 新增 debug log
         const accessToken = adminAny.session?.accessToken || adminAny.session?.access_token;
-        console.log("[DEBUG] Web Pixels 檢查 - Access Token:", accessToken ? "存在" : "不存在");
         const shopDomain = adminAny.session?.shop || adminAny.session?.shopDomain;
+        console.log("[DEBUG] Web Pixels 檢查 - Access Token:", accessToken ? "存在" : "不存在");
         console.log("[DEBUG] Web Pixels 檢查 - Shop Domain:", shopDomain);
         console.log("[DEBUG] Web Pixels 檢查 - adminAny.rest.get:", typeof adminAny.rest.get);
         console.log("[DEBUG] Web Pixels 檢查 - 準備查詢 web_pixels，header:", {
