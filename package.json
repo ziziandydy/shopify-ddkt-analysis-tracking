@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "prisma generate && remix vite:build",
-    "vercel-build": "npm install --no-optional --legacy-peer-deps && npm install @rollup/rollup-linux-x64-gnu@4.21.1 --force && prisma generate && remix vite:build",
+    "vercel-build": "npm install --no-optional --legacy-peer-deps && npm install @rollup/rollup-linux-x64-gnu@4.21.1 @esbuild/linux-x64@0.20.11 --force && prisma generate && remix vite:build",
     "dev": "shopify app dev",
     "config:link": "shopify app config link",
     "generate": "shopify app generate",
@@ -75,10 +75,14 @@
     "minimatch": "9.0.5",
     "rollup": {
       "@rollup/rollup-linux-x64-gnu": "4.21.1"
+    },
+    "esbuild": {
+      "@esbuild/linux-x64": "0.20.11"
     }
   },
   "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "4.21.1"
+    "@rollup/rollup-linux-x64-gnu": "4.21.1",
+    "@esbuild/linux-x64": "0.20.11"
   },
   "author": "iTubai"
 }
