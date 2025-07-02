@@ -143,8 +143,46 @@ const shopify = shopifyApp({
           "X-Shopify-Access-Token": accessToken ? "存在" : "不存在"
         });
 
-        const { body: webPixels } = await admin.rest.get({ path: 'web_pixels' });
-        console.log('【Extension】Web Pixels API 回應:', JSON.stringify(webPixels));
+        // 查詢 Web Pixels - 嘗試不同的 API 路徑
+        let webPixels;
+
+        try {
+          // 嘗試標準的 web_pixels 路徑
+          const response = await admin.rest.get({ path: 'web_pixels' });
+          webPixels = response.body;
+          console.log("【Extension】使用 web_pixels 路徑成功");
+        } catch (error: any) {
+          console.log("【Extension】web_pixels 路徑失敗，嘗試其他路徑:", error?.status, error?.statusText);
+
+          try {
+            // 嘗試 web_pixel_extensions 路徑
+            const response = await admin.rest.get({ path: 'web_pixel_extensions' });
+            webPixels = response.body;
+            console.log("【Extension】使用 web_pixel_extensions 路徑成功");
+          } catch (error2: any) {
+            console.log("【Extension】web_pixel_extensions 路徑也失敗:", error2?.status, error2?.statusText);
+
+            try {
+              // 嘗試 extensions 路徑
+              const response = await admin.rest.get({ path: 'extensions' });
+              webPixels = response.body;
+              console.log("【Extension】使用 extensions 路徑成功");
+            } catch (error3: any) {
+              console.log("【Extension】所有路徑都失敗，拋出錯誤");
+              throw error3;
+            }
+          }
+        }
+        console.log('【Extension】Web Pixels API 回應類型:', typeof webPixels);
+        console.log('【Extension】Web Pixels API 回應 keys:', Object.keys(webPixels || {}));
+        // 避免循環引用問題，只記錄基本資訊
+        if (webPixels && typeof webPixels === 'object') {
+          console.log('【Extension】Web Pixels API 回應基本資訊:', {
+            hasWebPixels: !!(webPixels as any).web_pixels,
+            webPixelsCount: Array.isArray((webPixels as any).web_pixels) ? (webPixels as any).web_pixels.length : 0,
+            webPixelsTitles: Array.isArray((webPixels as any).web_pixels) ? (webPixels as any).web_pixels.map((p: any) => p.title) : []
+          });
+        }
         console.log('【Extension】現有 Web Pixels 數量:', webPixels.web_pixels?.length || 0);
         console.log('【Extension】所有 Web Pixels 標題:', webPixels.web_pixels?.map((p: any) => p.title) || []);
 

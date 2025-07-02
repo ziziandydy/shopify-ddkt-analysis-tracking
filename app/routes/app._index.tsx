@@ -180,7 +180,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           },
         });
 
-        console.log("【App】ScriptTag 註冊 API 回應:", JSON.stringify(result.body));
+        console.log("【App】ScriptTag 註冊 API 回應類型:", typeof result.body);
+        console.log("【App】ScriptTag 註冊 API 回應 keys:", Object.keys(result.body || {}));
+        // 避免循環引用問題，只記錄基本資訊
+        if (result.body && typeof result.body === 'object') {
+          console.log("【App】ScriptTag 註冊 API 回應基本資訊:", {
+            hasScriptTag: !!(result.body as any).script_tag,
+            scriptTagId: (result.body as any).script_tag?.id,
+            scriptTagSrc: (result.body as any).script_tag?.src
+          });
+        }
 
         let scriptTag = null;
         if (typeof result.body?.getReader === 'function') {
@@ -200,7 +209,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           scriptTag = (result.body as any).script_tag;
         }
 
-        console.log("【App】ScriptTag 註冊成功:", JSON.stringify(scriptTag));
+        console.log("【App】ScriptTag 註冊成功:", {
+          id: scriptTag?.id,
+          src: scriptTag?.src,
+          event: scriptTag?.event,
+          created_at: scriptTag?.created_at
+        });
 
         return {
           type: "registerScriptTag",
@@ -255,8 +269,34 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           "X-Shopify-Access-Token": accessToken ? "存在" : "不存在"
         });
 
-        // 查詢 Web Pixels
-        const response = await adminAny.rest.get({ path: 'web_pixels' });
+        // 查詢 Web Pixels - 嘗試不同的 API 路徑
+        let response;
+
+        try {
+          // 嘗試標準的 web_pixels 路徑
+          response = await adminAny.rest.get({ path: 'web_pixels' });
+          console.log("【App】使用 web_pixels 路徑成功");
+        } catch (error: any) {
+          console.log("【App】web_pixels 路徑失敗，嘗試其他路徑:", error?.status, error?.statusText);
+
+          try {
+            // 嘗試 web_pixel_extensions 路徑
+            response = await adminAny.rest.get({ path: 'web_pixel_extensions' });
+            console.log("【App】使用 web_pixel_extensions 路徑成功");
+          } catch (error2: any) {
+            console.log("【App】web_pixel_extensions 路徑也失敗:", error2?.status, error2?.statusText);
+
+            try {
+              // 嘗試 extensions 路徑
+              response = await adminAny.rest.get({ path: 'extensions' });
+              console.log("【App】使用 extensions 路徑成功");
+            } catch (error3: any) {
+              console.log("【App】所有路徑都失敗，拋出錯誤");
+              throw error3;
+            }
+          }
+        }
+
         let body;
         if (typeof response.json === 'function') {
           body = await response.json();
@@ -264,7 +304,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           body = response.body;
         }
 
-        console.log("【App】Web Pixels API 回應:", JSON.stringify(body));
+        console.log("【App】Web Pixels API 回應類型:", typeof body);
+        console.log("【App】Web Pixels API 回應 keys:", Object.keys(body || {}));
+        // 避免循環引用問題，只記錄基本資訊
+        if (body && typeof body === 'object') {
+          console.log("【App】Web Pixels API 回應基本資訊:", {
+            hasWebPixels: !!(body as any).web_pixels,
+            webPixelsCount: Array.isArray((body as any).web_pixels) ? (body as any).web_pixels.length : 0,
+            webPixelsTitles: Array.isArray((body as any).web_pixels) ? (body as any).web_pixels.map((p: any) => p.title) : []
+          });
+        }
 
         // 防呆：確保 web_pixels 一定是陣列
         const webPixels = Array.isArray(body?.web_pixels) ? body.web_pixels : [];
