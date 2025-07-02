@@ -103,15 +103,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         });
 
         const { body } = await adminAny.rest.get({ path: 'script_tags' });
-        // 只 log script_tags 陣列長度，避免 circular reference
-        if (body && Array.isArray(body.script_tags)) {
-          console.log("[DEBUG] ScriptTag API 回傳 script_tags 數量:", body.script_tags.length);
-        } else {
-          console.log("[DEBUG] ScriptTag API 回傳內容:", typeof body, body && Object.keys(body));
+        // 防呆：確保 script_tags 一定是陣列
+        const scriptTags = Array.isArray(body?.script_tags) ? body.script_tags : [];
+        if (!Array.isArray(body?.script_tags)) {
+          console.error("[ScriptTag] Shopify API 回傳格式異常，無法取得 script_tags:", body);
         }
-
-        const appUrl = process.env.SHOPIFY_APP_URL || 'https://shopify-ddkt-analysis-tracking.vercel.app';
-        const ourScriptTags = body.script_tags.filter((tag: any) =>
+        const ourScriptTags = scriptTags.filter((tag: any) =>
           tag.src && tag.src.includes('pixel.js')
         );
 
