@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "build": "prisma generate && remix vite:build",
+    "vercel-build": "npm install --no-optional && prisma generate && remix vite:build",
     "dev": "shopify app dev",
     "config:link": "shopify app config link",
     "generate": "shopify app generate",
@@ -53,7 +54,7 @@
     "eslint-config-prettier": "^10.0.1",
     "prettier": "^3.2.4",
     "typescript": "^5.2.2",
-    "vite": "^6.2.2"
+    "vite": "^7.0.0"
   },
   "workspaces": [
     "extensions/*"
@@ -72,6 +73,9 @@
     "@graphql-codegen/client-preset": "4.7.0",
     "@graphql-codegen/typescript-operations": "4.5.0",
     "minimatch": "9.0.5"
+  },
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.21.1"
   },
   "author": "iTubai"
 }
