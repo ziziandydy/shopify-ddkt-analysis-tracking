@@ -238,31 +238,28 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (action === "checkWebPixels") {
       try {
-        console.log("【App】開始用 GraphQL 查詢 Web Pixel Extensions...");
-        const query = `
-          query {
-            webPixels(first: 10) {
-              edges {
-                node {
-                  id
-                  title
-                  status
-                  settings
-                  createdAt
-                  updatedAt
-                }
-              }
-            }
-          }
-        `;
-        const response = await admin.graphql(query);
-        const data = await response.json();
-        const webPixels = data.data.webPixels.edges.map((edge: any) => edge.node);
+        console.log("【App】開始用 REST API 查詢 Web Pixel Extensions...");
+
+        // 使用 REST API 查詢 Web Pixels
+        const response = await admin.rest.get({ path: 'web_pixels' });
+
+        // 解析回應，支援 response.json() 或 response.body
+        let webPixelsData;
+        if (typeof response.json === 'function') {
+          webPixelsData = await response.json();
+        } else {
+          webPixelsData = response.body;
+        }
+
+        // 確保 web_pixels 是陣列
+        const webPixels = Array.isArray(webPixelsData?.web_pixels) ? webPixelsData.web_pixels : [];
+
         const ourPixel = webPixels.find((pixel: any) =>
           pixel.title === 'DDKT Analysis Tracking' ||
           pixel.title === 'ddkt-tracking' ||
           pixel.title?.includes('ddkt')
         );
+
         console.log("【App】Web Pixels 查詢結果:", webPixels);
         return {
           type: "webPixels",
@@ -288,29 +285,27 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     if (action === "registerWebPixel") {
       try {
-        console.log("【App】開始用 GraphQL 註冊 Web Pixel Extension...");
+        console.log("【App】開始用 REST API 註冊 Web Pixel Extension...");
+
         // 先查詢是否已存在
-        const query = `
-          query {
-            webPixels(first: 10) {
-              edges {
-                node {
-                  id
-                  title
-                  status
-                }
-              }
-            }
-          }
-        `;
-        const response = await admin.graphql(query);
-        const data = await response.json();
-        const webPixels = data.data.webPixels.edges.map((edge: any) => edge.node);
+        const response = await admin.rest.get({ path: 'web_pixels' });
+
+        // 解析回應，支援 response.json() 或 response.body
+        let webPixelsData;
+        if (typeof response.json === 'function') {
+          webPixelsData = await response.json();
+        } else {
+          webPixelsData = response.body;
+        }
+
+        const webPixels = Array.isArray(webPixelsData?.web_pixels) ? webPixelsData.web_pixels : [];
+
         const ourPixel = webPixels.find((pixel: any) =>
           pixel.title === 'DDKT Analysis Tracking' ||
           pixel.title === 'ddkt-tracking' ||
           pixel.title?.includes('ddkt')
         );
+
         if (ourPixel) {
           console.log("【App】Web Pixel Extension 已存在，ID:", ourPixel.id);
           return {
@@ -320,49 +315,47 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             extensionId: ourPixel.id
           };
         }
-        // 註冊（建立）Web Pixel
-        const mutation = `
-          mutation webPixelCreate($input: WebPixelInput!) {
-            webPixelCreate(webPixel: $input) {
-              userErrors {
-                field
-                message
-              }
-              webPixel {
-                id
-                title
-                status
-              }
+
+        // 註冊（建立）Web Pixel - 使用 REST API
+        const createResponse = await admin.rest.post({
+          path: 'web_pixels',
+          data: {
+            web_pixel: {
+              title: "DDKT Analysis Tracking",
+              settings: "{}"
             }
           }
-        `;
-        const variables = {
-          input: {
-            title: "DDKT Analysis Tracking",
-            settings: "{}"
-          }
-        };
-        const createResponse = await admin.graphql(mutation, { variables });
-        const createData = await createResponse.json();
-        const userErrors = createData.data.webPixelCreate.userErrors;
-        const createdPixel = createData.data.webPixelCreate.webPixel;
-        if (userErrors && userErrors.length > 0) {
+        });
+
+        // 解析回應，支援 response.json() 或 response.body
+        let createData;
+        if (typeof createResponse.json === 'function') {
+          createData = await createResponse.json();
+        } else {
+          createData = createResponse.body;
+        }
+
+        const createdPixel = createData?.web_pixel;
+
+        if (createdPixel) {
+          console.log("【App】Web Pixel Extension 註冊成功:", createdPixel);
+          return {
+            type: "registerWebPixel",
+            success: true,
+            message: "Web Pixel Extension 註冊成功",
+            extensionId: createdPixel.id
+          };
+        } else {
           return {
             type: "registerWebPixel",
             success: false,
             error: {
-              message: userErrors.map((e: any) => e.message).join(", ") || "建立失敗",
-              status: 400,
-              statusText: "GraphQL User Error"
+              message: "Web Pixel Extension 註冊失敗：無法獲取回應數據",
+              status: 500,
+              statusText: "Internal Server Error"
             }
           };
         }
-        return {
-          type: "registerWebPixel",
-          success: true,
-          message: "Web Pixel Extension 註冊成功",
-          extensionId: createdPixel.id
-        };
       } catch (error: any) {
         console.error("【App】Web Pixel Extension 註冊失敗:", error?.message, error?.stack);
         return {
@@ -1023,7 +1016,7 @@ export default function Index() {
                     borderColor="border"
                   >
                     <BlockStack gap="300">
-                      <Text as="h4" variant="headingSm">3. 查詢 Web Pixel Extensions</Text>
+                      <Text as="h4" variant="headingSm">3. 查詢 Web Pixel Extensions (REST API)</Text>
                       <Box
                         padding="300"
                         background="bg-surface"
@@ -1033,24 +1026,59 @@ export default function Index() {
                         overflowX="scroll"
                       >
                         <pre style={{ margin: 0, fontSize: "12px" }}>
-                          <code>{`query {
-  webPixels(first: 10) {
-    edges {
-      node {
-        id
-        title
-        status
-        settings
-        createdAt
-        updatedAt
-      }
+                          <code>{`GET /admin/api/2024-01/web_pixels.json
+
+Response:
+{
+  "web_pixels": [
+    {
+      "id": 123456789,
+      "title": "DDKT Analysis Tracking",
+      "status": "active",
+      "settings": "{}",
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
     }
+  ]
+}`}</code>
+                        </pre>
+                      </Box>
+
+                      <Text as="h5" variant="headingSm">建立 Web Pixel Extension (REST API)</Text>
+                      <Box
+                        padding="300"
+                        background="bg-surface"
+                        borderWidth="025"
+                        borderRadius="100"
+                        borderColor="border"
+                        overflowX="scroll"
+                      >
+                        <pre style={{ margin: 0, fontSize: "12px" }}>
+                          <code>{`POST /admin/api/2024-01/web_pixels.json
+
+Request Body:
+{
+  "web_pixel": {
+    "title": "DDKT Analysis Tracking",
+    "settings": "{}"
+  }
+}
+
+Response:
+{
+  "web_pixel": {
+    "id": 123456789,
+    "title": "DDKT Analysis Tracking",
+    "status": "active",
+    "settings": "{}",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
   }
 }`}</code>
                         </pre>
                       </Box>
 
-                      <Text as="h5" variant="headingSm">進階查詢（可編輯參數）</Text>
+                      <Text as="h5" variant="headingSm">刪除 Web Pixel Extension (REST API)</Text>
                       <Box
                         padding="300"
                         background="bg-surface"
@@ -1060,53 +1088,20 @@ export default function Index() {
                         overflowX="scroll"
                       >
                         <pre style={{ margin: 0, fontSize: "12px" }}>
-                          <code>{`query WebPixelsQuery($first: Int!, $after: String, $query: String) {
-  webPixels(first: $first, after: $after, query: $query) {
-    pageInfo {
-      hasNextPage
-      hasPreviousPage
-      startCursor
-      endCursor
-    }
-    edges {
-      cursor
-      node {
-        id
-        title
-        status
-        settings
-        createdAt
-        updatedAt
-        # 可選欄位
-        # displayName
-        # resourceType
-        # type
-      }
-    }
+                          <code>{`DELETE /admin/api/2024-01/web_pixels/{id}.json
+
+Response:
+{
+  "web_pixel": {
+    "id": 123456789,
+    "title": "DDKT Analysis Tracking",
+    "status": "deleted"
   }
 }`}</code>
                         </pre>
                       </Box>
 
-                      <Text as="h5" variant="headingSm">查詢變數範例</Text>
-                      <Box
-                        padding="300"
-                        background="bg-surface"
-                        borderWidth="025"
-                        borderRadius="100"
-                        borderColor="border"
-                        overflowX="scroll"
-                      >
-                        <pre style={{ margin: 0, fontSize: "12px" }}>
-                          <code>{`{
-  "first": 20,
-  "after": null,
-  "query": "ddkt"
-}`}</code>
-                        </pre>
-                      </Box>
-
-                      <Text as="h5" variant="headingSm">常用查詢範例</Text>
+                      <Text as="h5" variant="headingSm">常用操作範例</Text>
                       <BlockStack gap="200">
                         <Box
                           padding="200"
@@ -1116,8 +1111,8 @@ export default function Index() {
                           borderColor="border"
                         >
                           <Text as="p" variant="bodySm">
-                            <strong>查詢特定標題的 Web Pixel：</strong><br />
-                            <code>{`{"query": "DDKT Analysis Tracking"}`}</code>
+                            <strong>查詢所有 Web Pixels：</strong><br />
+                            <code>GET /admin/api/2024-01/web_pixels.json</code>
                           </Text>
                         </Box>
                         <Box
@@ -1128,8 +1123,8 @@ export default function Index() {
                           borderColor="border"
                         >
                           <Text as="p" variant="bodySm">
-                            <strong>查詢活躍狀態的 Web Pixel：</strong><br />
-                            在查詢中使用 <code>status: ACTIVE</code> 篩選
+                            <strong>查詢特定 Web Pixel：</strong><br />
+                            <code>GET /admin/api/2024-01/web_pixels/{"{id}"}.json</code>
                           </Text>
                         </Box>
                         <Box
@@ -1140,8 +1135,8 @@ export default function Index() {
                           borderColor="border"
                         >
                           <Text as="p" variant="bodySm">
-                            <strong>分頁查詢：</strong><br />
-                            使用 <code>after</code> 參數和 <code>pageInfo</code> 進行分頁
+                            <strong>更新 Web Pixel：</strong><br />
+                            <code>PUT /admin/api/2024-01/web_pixels/{"{id}"}.json</code>
                           </Text>
                         </Box>
                       </BlockStack>
