@@ -900,6 +900,118 @@ export default function Index() {
                     )}
                   </BlockStack>
                 )}
+
+                <BlockStack gap="400">
+                  <Text as="h3" variant="headingMd">
+                    為什麼會出現 "No extension found" 錯誤？
+                  </Text>
+                  <Banner tone="warning" title="重要說明">
+                    <p>
+                      Web Pixel Extensions 需要兩個步驟才能完全安裝：
+                    </p>
+                    <ol style={{ marginTop: "10px", marginLeft: "20px" }}>
+                      <li><strong>Extension 定義</strong> - 在 Shopify Partners 後台建立</li>
+                      <li><strong>Web Pixel 實例</strong> - 在商店中建立具體的追蹤實例</li>
+                    </ol>
+                  </Banner>
+
+                  <Text as="h3" variant="headingMd">
+                    解決方案
+                  </Text>
+
+                  <Box
+                    padding="400"
+                    background="bg-surface-active"
+                    borderWidth="025"
+                    borderRadius="200"
+                    borderColor="border"
+                  >
+                    <BlockStack gap="300">
+                      <Text as="h4" variant="headingSm">步驟 1: 確認 Extension 已部署</Text>
+                      <Text as="p" variant="bodyMd">
+                        1. 前往 <Link url="https://partners.shopify.com" target="_blank" removeUnderline>Shopify Partners</Link>
+                        2. 進入您的應用程式
+                        3. 檢查 Extensions 標籤頁
+                        4. 確認 "ddkt-tracking" Web Pixel Extension 已部署
+                      </Text>
+                    </BlockStack>
+                  </Box>
+
+                  <Box
+                    padding="400"
+                    background="bg-surface-active"
+                    borderWidth="025"
+                    borderRadius="200"
+                    borderColor="border"
+                  >
+                    <BlockStack gap="300">
+                      <Text as="h4" variant="headingSm">步驟 2: 重新部署應用程式</Text>
+                      <Text as="p" variant="bodyMd">
+                        在終端機中執行：
+                      </Text>
+                      <Box
+                        padding="300"
+                        background="bg-surface"
+                        borderWidth="025"
+                        borderRadius="100"
+                        borderColor="border"
+                        overflowX="scroll"
+                      >
+                        <pre style={{ margin: 0, fontSize: "12px" }}>
+                          <code>npx shopify app deploy</code>
+                        </pre>
+                      </Box>
+                    </BlockStack>
+                  </Box>
+
+                  <Box
+                    padding="400"
+                    background="bg-surface-active"
+                    borderWidth="025"
+                    borderRadius="200"
+                    borderColor="border"
+                  >
+                    <BlockStack gap="300">
+                      <Text as="h4" variant="headingSm">步驟 3: 重新安裝應用程式</Text>
+                      <Text as="p" variant="bodyMd">
+                        1. 從商店中移除應用程式
+                        2. 重新安裝應用程式
+                        3. 授權新的權限範圍
+                      </Text>
+                    </BlockStack>
+                  </Box>
+
+                  <Box
+                    padding="400"
+                    background="bg-surface-active"
+                    borderWidth="025"
+                    borderRadius="200"
+                    borderColor="border"
+                  >
+                    <BlockStack gap="300">
+                      <Text as="h4" variant="headingSm">步驟 4: 手動建立 Web Pixel</Text>
+                      <Text as="p" variant="bodyMd">
+                        如果自動安裝失敗，可以在商店後台手動建立：
+                      </Text>
+                      <Text as="p" variant="bodyMd">
+                        1. 前往商店後台 → 設定 → 應用程式和銷售管道
+                        2. 點擊 "管理應用程式"
+                        3. 找到您的應用程式
+                        4. 點擊 "新增像素"
+                        5. 選擇 "DDKT Analysis Tracking"
+                      </Text>
+                    </BlockStack>
+                  </Box>
+
+                  <Banner tone="info" title="技術說明">
+                    <p>
+                      <strong>GraphQL 錯誤原因：</strong><br />
+                      • "No extension found" 表示系統找不到對應的 Extension 定義<br />
+                      • 這通常發生在 Extension 尚未部署或權限不足時<br />
+                      • 我們已改用 REST API 來避免這個問題
+                    </p>
+                  </Banner>
+                </BlockStack>
               </BlockStack>
             </Card>
           </Layout.Section>
