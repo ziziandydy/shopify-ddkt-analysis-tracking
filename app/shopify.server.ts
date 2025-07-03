@@ -62,6 +62,9 @@ const shopify = shopifyApp({
     ? { customShopDomains: [process.env.SHOP_CUSTOM_DOMAIN] }
     : {}),
   afterAuth: async ({ admin, shop, session }: any) => {
+    console.log("【afterAuth】session:", session);
+    console.log("【afterAuth】admin.session:", admin.session);
+    console.log("【afterAuth】accessToken:", session?.accessToken, admin.session?.accessToken);
     console.log("=== 進入 afterAuth callback ===");
     console.log("【afterAuth】觸發時間:", new Date().toISOString());
     console.log("【afterAuth】shop:", shop);
