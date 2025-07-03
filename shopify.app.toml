@@ -8,7 +8,7 @@ embedded = true
 
 [build]
 include_config_on_deploy = true
-automatically_update_urls_on_dev = true
+automatically_update_urls_on_dev = false
 
 [webhooks]
 api_version = "2025-04"
@@ -23,7 +23,7 @@ api_version = "2025-04"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "write_products,write_script_tags,read_script_tags"
+scopes = "write_products,write_script_tags,read_script_tags,read_pixels,write_pixels"
 
 [auth]
 redirect_urls = ["https://porter-chances-necessarily-tomato.trycloudflare.com/auth/callback", "https://porter-chances-necessarily-tomato.trycloudflare.com/auth/shopify/callback", "https://porter-chances-necessarily-tomato.trycloudflare.com/api/auth/callback"]

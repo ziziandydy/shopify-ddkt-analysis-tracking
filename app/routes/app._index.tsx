@@ -910,6 +910,302 @@ export default function Index() {
               </BlockStack>
             </Card>
           </Layout.Section>
+
+          <Layout.Section>
+            <Card>
+              <BlockStack gap="500">
+                <BlockStack gap="200">
+                  <Text as="h2" variant="headingMd">
+                    Shopify GraphiQL 開發工具 🔧
+                  </Text>
+                  <Text variant="bodyMd" as="p">
+                    快速前往 Shopify GraphiQL 介面進行 API 查詢和測試。這裡提供常用的查詢範例和操作指南。
+                  </Text>
+                </BlockStack>
+
+                <InlineStack gap="300">
+                  <Button
+                    url="https://shopify.dev/graphiql/admin"
+                    target="_blank"
+                    variant="primary"
+                  >
+                    開啟 Shopify GraphiQL
+                  </Button>
+                  <Button
+                    url="https://shopify.dev/docs/api/admin-graphql"
+                    target="_blank"
+                    variant="secondary"
+                  >
+                    GraphQL API 文檔
+                  </Button>
+                </InlineStack>
+
+                <BlockStack gap="400">
+                  <Text as="h3" variant="headingMd">
+                    常用查詢範例
+                  </Text>
+
+                  <Box
+                    padding="400"
+                    background="bg-surface-active"
+                    borderWidth="025"
+                    borderRadius="200"
+                    borderColor="border"
+                  >
+                    <BlockStack gap="300">
+                      <Text as="h4" variant="headingSm">1. 查詢商店資訊</Text>
+                      <Box
+                        padding="300"
+                        background="bg-surface"
+                        borderWidth="025"
+                        borderRadius="100"
+                        borderColor="border"
+                        overflowX="scroll"
+                      >
+                        <pre style={{ margin: 0, fontSize: "12px" }}>
+                          <code>{`query {
+  shop {
+    id
+    name
+    email
+    myshopifyDomain
+    plan {
+      displayName
+    }
+  }
+}`}</code>
+                        </pre>
+                      </Box>
+                    </BlockStack>
+                  </Box>
+
+                  <Box
+                    padding="400"
+                    background="bg-surface-active"
+                    borderWidth="025"
+                    borderRadius="200"
+                    borderColor="border"
+                  >
+                    <BlockStack gap="300">
+                      <Text as="h4" variant="headingSm">2. 查詢 ScriptTag</Text>
+                      <Box
+                        padding="300"
+                        background="bg-surface"
+                        borderWidth="025"
+                        borderRadius="100"
+                        borderColor="border"
+                        overflowX="scroll"
+                      >
+                        <pre style={{ margin: 0, fontSize: "12px" }}>
+                          <code>{`query {
+  scriptTags(first: 10) {
+    edges {
+      node {
+        id
+        src
+        event
+        createdAt
+        updatedAt
+      }
+    }
+  }
+}`}</code>
+                        </pre>
+                      </Box>
+                    </BlockStack>
+                  </Box>
+
+                  <Box
+                    padding="400"
+                    background="bg-surface-active"
+                    borderWidth="025"
+                    borderRadius="200"
+                    borderColor="border"
+                  >
+                    <BlockStack gap="300">
+                      <Text as="h4" variant="headingSm">3. 查詢 Web Pixel Extensions</Text>
+                      <Box
+                        padding="300"
+                        background="bg-surface"
+                        borderWidth="025"
+                        borderRadius="100"
+                        borderColor="border"
+                        overflowX="scroll"
+                      >
+                        <pre style={{ margin: 0, fontSize: "12px" }}>
+                          <code>{`query {
+  webPixels(first: 10) {
+    edges {
+      node {
+        id
+        title
+        status
+        settings
+        createdAt
+        updatedAt
+      }
+    }
+  }
+}`}</code>
+                        </pre>
+                      </Box>
+
+                      <Text as="h5" variant="headingSm">進階查詢（可編輯參數）</Text>
+                      <Box
+                        padding="300"
+                        background="bg-surface"
+                        borderWidth="025"
+                        borderRadius="100"
+                        borderColor="border"
+                        overflowX="scroll"
+                      >
+                        <pre style={{ margin: 0, fontSize: "12px" }}>
+                          <code>{`query WebPixelsQuery($first: Int!, $after: String, $query: String) {
+  webPixels(first: $first, after: $after, query: $query) {
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+    edges {
+      cursor
+      node {
+        id
+        title
+        status
+        settings
+        createdAt
+        updatedAt
+        # 可選欄位
+        # displayName
+        # resourceType
+        # type
+      }
+    }
+  }
+}`}</code>
+                        </pre>
+                      </Box>
+
+                      <Text as="h5" variant="headingSm">查詢變數範例</Text>
+                      <Box
+                        padding="300"
+                        background="bg-surface"
+                        borderWidth="025"
+                        borderRadius="100"
+                        borderColor="border"
+                        overflowX="scroll"
+                      >
+                        <pre style={{ margin: 0, fontSize: "12px" }}>
+                          <code>{`{
+  "first": 20,
+  "after": null,
+  "query": "ddkt"
+}`}</code>
+                        </pre>
+                      </Box>
+
+                      <Text as="h5" variant="headingSm">常用查詢範例</Text>
+                      <BlockStack gap="200">
+                        <Box
+                          padding="200"
+                          background="bg-surface-secondary"
+                          borderWidth="025"
+                          borderRadius="100"
+                          borderColor="border"
+                        >
+                          <Text as="p" variant="bodySm">
+                            <strong>查詢特定標題的 Web Pixel：</strong><br />
+                            <code>{`{"query": "DDKT Analysis Tracking"}`}</code>
+                          </Text>
+                        </Box>
+                        <Box
+                          padding="200"
+                          background="bg-surface-secondary"
+                          borderWidth="025"
+                          borderRadius="100"
+                          borderColor="border"
+                        >
+                          <Text as="p" variant="bodySm">
+                            <strong>查詢活躍狀態的 Web Pixel：</strong><br />
+                            在查詢中使用 <code>status: ACTIVE</code> 篩選
+                          </Text>
+                        </Box>
+                        <Box
+                          padding="200"
+                          background="bg-surface-secondary"
+                          borderWidth="025"
+                          borderRadius="100"
+                          borderColor="border"
+                        >
+                          <Text as="p" variant="bodySm">
+                            <strong>分頁查詢：</strong><br />
+                            使用 <code>after</code> 參數和 <code>pageInfo</code> 進行分頁
+                          </Text>
+                        </Box>
+                      </BlockStack>
+                    </BlockStack>
+                  </Box>
+
+                  <Box
+                    padding="400"
+                    background="bg-surface-active"
+                    borderWidth="025"
+                    borderRadius="200"
+                    borderColor="border"
+                  >
+                    <BlockStack gap="300">
+                      <Text as="h4" variant="headingSm">4. 查詢產品資訊</Text>
+                      <Box
+                        padding="300"
+                        background="bg-surface"
+                        borderWidth="025"
+                        borderRadius="100"
+                        borderColor="border"
+                        overflowX="scroll"
+                      >
+                        <pre style={{ margin: 0, fontSize: "12px" }}>
+                          <code>{`query {
+  products(first: 5) {
+    edges {
+      node {
+        id
+        title
+        handle
+        status
+        createdAt
+        variants(first: 3) {
+          edges {
+            node {
+              id
+              title
+              price
+              sku
+            }
+          }
+        }
+      }
+    }
+  }
+}`}</code>
+                        </pre>
+                      </Box>
+                    </BlockStack>
+                  </Box>
+
+                  <Banner tone="info" title="使用提示">
+                    <p>
+                      • 在 GraphiQL 中，您可以直接執行這些查詢來測試 API<br />
+                      • 使用左側的 Schema 瀏覽器來探索可用的欄位和類型<br />
+                      • 右側的 Variables 面板可以用來設定查詢變數<br />
+                      • 點擊 "Docs" 按鈕查看完整的 API 文檔
+                    </p>
+                  </Banner>
+                </BlockStack>
+              </BlockStack>
+            </Card>
+          </Layout.Section>
         </Layout>
       </BlockStack>
     </Page>
