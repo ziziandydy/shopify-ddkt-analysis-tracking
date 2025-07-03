@@ -240,15 +240,58 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       try {
         console.log("【App】開始用 REST API 查詢 Web Pixel Extensions...");
 
-        // 使用 REST API 查詢 Web Pixels
-        const response = await admin.rest.get({ path: 'web_pixels' });
-
-        // 解析回應，支援 response.json() 或 response.body
+        // 嘗試不同的 API 端點來查詢 Web Pixels
         let webPixelsData;
-        if (typeof response.json === 'function') {
-          webPixelsData = await response.json();
-        } else {
-          webPixelsData = response.body;
+        let apiPath = '';
+
+        try {
+          // 嘗試標準的 web_pixels 路徑
+          apiPath = 'web_pixels';
+          const response = await admin.rest.get({ path: apiPath });
+
+          // 解析回應，支援 response.json() 或 response.body
+          if (typeof response.json === 'function') {
+            webPixelsData = await response.json();
+          } else {
+            webPixelsData = response.body;
+          }
+
+          console.log("【App】使用 web_pixels 路徑成功");
+        } catch (error: any) {
+          console.log("【App】web_pixels 路徑失敗，嘗試其他路徑:", error?.status, error?.statusText);
+
+          try {
+            // 嘗試 web_pixel_extensions 路徑
+            apiPath = 'web_pixel_extensions';
+            const response = await admin.rest.get({ path: apiPath });
+
+            if (typeof response.json === 'function') {
+              webPixelsData = await response.json();
+            } else {
+              webPixelsData = response.body;
+            }
+
+            console.log("【App】使用 web_pixel_extensions 路徑成功");
+          } catch (error2: any) {
+            console.log("【App】web_pixel_extensions 路徑也失敗:", error2?.status, error2?.statusText);
+
+            try {
+              // 嘗試 extensions 路徑
+              apiPath = 'extensions';
+              const response = await admin.rest.get({ path: apiPath });
+
+              if (typeof response.json === 'function') {
+                webPixelsData = await response.json();
+              } else {
+                webPixelsData = response.body;
+              }
+
+              console.log("【App】使用 extensions 路徑成功");
+            } catch (error3: any) {
+              console.log("【App】所有路徑都失敗，拋出錯誤");
+              throw error3;
+            }
+          }
         }
 
         // 確保 web_pixels 是陣列
@@ -261,23 +304,39 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         );
 
         console.log("【App】Web Pixels 查詢結果:", webPixels);
+        console.log("【App】使用的 API 路徑:", apiPath);
+        console.log("【App】回應數據:", webPixelsData);
+
         return {
           type: "webPixels",
           success: true,
           allWebPixels: webPixels,
           ourPixel,
           totalCount: webPixels.length,
-          ourCount: ourPixel ? 1 : 0
+          ourCount: ourPixel ? 1 : 0,
+          apiPath: apiPath
         };
       } catch (error: any) {
         console.error("【App】Web Pixels 查詢失敗:", error?.message, error?.stack);
+        console.error("【App】錯誤詳情:", {
+          message: error?.message,
+          stack: error?.stack,
+          name: error?.name,
+          status: error?.status,
+          statusText: error?.statusText
+        });
+
         return {
           type: "webPixels",
           success: false,
           error: {
             message: error?.message || "未知錯誤",
             status: error?.status || 500,
-            statusText: error?.statusText || "Internal Server Error"
+            statusText: error?.statusText || "Internal Server Error",
+            details: {
+              name: error?.name,
+              stack: error?.stack
+            }
           }
         };
       }
@@ -287,15 +346,57 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       try {
         console.log("【App】開始用 REST API 註冊 Web Pixel Extension...");
 
-        // 先查詢是否已存在
-        const response = await admin.rest.get({ path: 'web_pixels' });
-
-        // 解析回應，支援 response.json() 或 response.body
+        // 先查詢是否已存在 - 使用相同的多路徑嘗試邏輯
         let webPixelsData;
-        if (typeof response.json === 'function') {
-          webPixelsData = await response.json();
-        } else {
-          webPixelsData = response.body;
+        let apiPath = '';
+
+        try {
+          // 嘗試標準的 web_pixels 路徑
+          apiPath = 'web_pixels';
+          const response = await admin.rest.get({ path: apiPath });
+
+          if (typeof response.json === 'function') {
+            webPixelsData = await response.json();
+          } else {
+            webPixelsData = response.body;
+          }
+
+          console.log("【App】使用 web_pixels 路徑成功");
+        } catch (error: any) {
+          console.log("【App】web_pixels 路徑失敗，嘗試其他路徑:", error?.status, error?.statusText);
+
+          try {
+            // 嘗試 web_pixel_extensions 路徑
+            apiPath = 'web_pixel_extensions';
+            const response = await admin.rest.get({ path: apiPath });
+
+            if (typeof response.json === 'function') {
+              webPixelsData = await response.json();
+            } else {
+              webPixelsData = response.body;
+            }
+
+            console.log("【App】使用 web_pixel_extensions 路徑成功");
+          } catch (error2: any) {
+            console.log("【App】web_pixel_extensions 路徑也失敗:", error2?.status, error2?.statusText);
+
+            try {
+              // 嘗試 extensions 路徑
+              apiPath = 'extensions';
+              const response = await admin.rest.get({ path: apiPath });
+
+              if (typeof response.json === 'function') {
+                webPixelsData = await response.json();
+              } else {
+                webPixelsData = response.body;
+              }
+
+              console.log("【App】使用 extensions 路徑成功");
+            } catch (error3: any) {
+              console.log("【App】所有路徑都失敗，拋出錯誤");
+              throw error3;
+            }
+          }
         }
 
         const webPixels = Array.isArray(webPixelsData?.web_pixels) ? webPixelsData.web_pixels : [];
@@ -316,16 +417,62 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           };
         }
 
-        // 註冊（建立）Web Pixel - 使用 REST API
-        const createResponse = await admin.rest.post({
-          path: 'web_pixels',
-          data: {
-            web_pixel: {
-              title: "DDKT Analysis Tracking",
-              settings: "{}"
+        // 註冊（建立）Web Pixel - 使用 REST API，嘗試不同路徑
+        let createResponse;
+        let createApiPath = '';
+
+        try {
+          // 嘗試標準的 web_pixels 路徑
+          createApiPath = 'web_pixels';
+          createResponse = await admin.rest.post({
+            path: createApiPath,
+            data: {
+              web_pixel: {
+                title: "DDKT Analysis Tracking",
+                settings: "{}"
+              }
+            }
+          });
+          console.log("【App】使用 web_pixels 路徑建立成功");
+        } catch (error: any) {
+          console.log("【App】web_pixels 路徑建立失敗，嘗試其他路徑:", error?.status, error?.statusText);
+
+          try {
+            // 嘗試 web_pixel_extensions 路徑
+            createApiPath = 'web_pixel_extensions';
+            createResponse = await admin.rest.post({
+              path: createApiPath,
+              data: {
+                web_pixel_extension: {
+                  title: "DDKT Analysis Tracking",
+                  settings: "{}"
+                }
+              }
+            });
+            console.log("【App】使用 web_pixel_extensions 路徑建立成功");
+          } catch (error2: any) {
+            console.log("【App】web_pixel_extensions 路徑建立也失敗:", error2?.status, error2?.statusText);
+
+            try {
+              // 嘗試 extensions 路徑
+              createApiPath = 'extensions';
+              createResponse = await admin.rest.post({
+                path: createApiPath,
+                data: {
+                  extension: {
+                    type: "web_pixel",
+                    title: "DDKT Analysis Tracking",
+                    settings: "{}"
+                  }
+                }
+              });
+              console.log("【App】使用 extensions 路徑建立成功");
+            } catch (error3: any) {
+              console.log("【App】所有建立路徑都失敗，拋出錯誤");
+              throw error3;
             }
           }
-        });
+        }
 
         // 解析回應，支援 response.json() 或 response.body
         let createData;
@@ -335,24 +482,31 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           createData = createResponse.body;
         }
 
-        const createdPixel = createData?.web_pixel;
+        const createdPixel = createData?.web_pixel || createData?.web_pixel_extension || createData?.extension;
 
         if (createdPixel) {
           console.log("【App】Web Pixel Extension 註冊成功:", createdPixel);
+          console.log("【App】使用的建立 API 路徑:", createApiPath);
           return {
             type: "registerWebPixel",
             success: true,
             message: "Web Pixel Extension 註冊成功",
-            extensionId: createdPixel.id
+            extensionId: createdPixel.id,
+            apiPath: createApiPath
           };
         } else {
+          console.log("【App】無法從回應中獲取建立的 Web Pixel 數據:", createData);
           return {
             type: "registerWebPixel",
             success: false,
             error: {
               message: "Web Pixel Extension 註冊失敗：無法獲取回應數據",
               status: 500,
-              statusText: "Internal Server Error"
+              statusText: "Internal Server Error",
+              details: {
+                createData: createData,
+                apiPath: createApiPath
+              }
             }
           };
         }
