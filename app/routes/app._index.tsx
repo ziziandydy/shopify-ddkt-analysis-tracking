@@ -346,133 +346,48 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       try {
         console.log("【App】開始用 REST API 註冊 Web Pixel Extension...");
 
-        // 先查詢是否已存在 - 使用相同的多路徑嘗試邏輯
-        let webPixelsData;
-        let apiPath = '';
+        // 取得 shop domain
+        const shopDomain = authResult.session?.shop || "test-shop";
+        // 產生唯一 trackid
+        const trackid = "spfyex-" + Buffer.from(shopDomain).toString("base64").replace(/=+$/, "");
+        // 產生靜態 JS 內容
+        const jsFileName = `pixel-extension-${shopDomain}.js`;
+        const jsContent = `register(({ analytics }) => {
+  analytics.subscribe("all_standard_events", (event) => {
+    const payload = {
+      event: event.name,
+      data: event.data,
+      trackid: "${trackid}",
+      timestamp: Date.now(),
+    };
+    fetch("https://violet.ghtinc.com/tracking/track/v2", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  });
+});`;
+        // 寫入 public 目錄
+        const fs = require("fs");
+        const path = require("path");
+        const jsPath = path.join(process.cwd(), "public", jsFileName);
+        fs.writeFileSync(jsPath, jsContent, "utf-8");
+        console.log("【App】已產生靜態 extension JS:", jsPath);
 
-        try {
-          // 嘗試標準的 web_pixels 路徑
-          apiPath = 'web_pixels';
-          const response = await admin.rest.get({ path: apiPath });
-
-          if (typeof response.json === 'function') {
-            webPixelsData = await response.json();
-          } else {
-            webPixelsData = response.body;
-          }
-
-          console.log("【App】使用 web_pixels 路徑成功");
-        } catch (error: any) {
-          console.log("【App】web_pixels 路徑失敗，嘗試其他路徑:", error?.status, error?.statusText);
-
-          try {
-            // 嘗試 web_pixel_extensions 路徑
-            apiPath = 'web_pixel_extensions';
-            const response = await admin.rest.get({ path: apiPath });
-
-            if (typeof response.json === 'function') {
-              webPixelsData = await response.json();
-            } else {
-              webPixelsData = response.body;
-            }
-
-            console.log("【App】使用 web_pixel_extensions 路徑成功");
-          } catch (error2: any) {
-            console.log("【App】web_pixel_extensions 路徑也失敗:", error2?.status, error2?.statusText);
-
-            try {
-              // 嘗試 extensions 路徑
-              apiPath = 'extensions';
-              const response = await admin.rest.get({ path: apiPath });
-
-              if (typeof response.json === 'function') {
-                webPixelsData = await response.json();
-              } else {
-                webPixelsData = response.body;
-              }
-
-              console.log("【App】使用 extensions 路徑成功");
-            } catch (error3: any) {
-              console.log("【App】所有路徑都失敗，拋出錯誤");
-              throw error3;
-            }
-          }
-        }
-
-        const webPixels = Array.isArray(webPixelsData?.web_pixels) ? webPixelsData.web_pixels : [];
-
-        const ourPixel = webPixels.find((pixel: any) =>
-          pixel.title === 'DDKT Analysis Tracking' ||
-          pixel.title === 'ddkt-tracking' ||
-          pixel.title?.includes('ddkt')
-        );
-
-        if (ourPixel) {
-          console.log("【App】Web Pixel Extension 已存在，ID:", ourPixel.id);
-          return {
-            type: "registerWebPixel",
-            success: true,
-            message: "Web Pixel Extension 已經存在",
-            extensionId: ourPixel.id
-          };
-        }
-
-        // 註冊（建立）Web Pixel - 使用 REST API，嘗試不同路徑
+        // 註冊 Web Pixel instance 並指定 script_url
         let createResponse;
-        let createApiPath = '';
-
-        try {
-          // 嘗試標準的 web_pixels 路徑
-          createApiPath = 'web_pixels';
-          createResponse = await admin.rest.post({
-            path: createApiPath,
-            data: {
-              web_pixel: {
-                title: "DDKT Analysis Tracking",
-                settings: "{}"
-              }
-            }
-          });
-          console.log("【App】使用 web_pixels 路徑建立成功");
-        } catch (error: any) {
-          console.log("【App】web_pixels 路徑建立失敗，嘗試其他路徑:", error?.status, error?.statusText);
-
-          try {
-            // 嘗試 web_pixel_extensions 路徑
-            createApiPath = 'web_pixel_extensions';
-            createResponse = await admin.rest.post({
-              path: createApiPath,
-              data: {
-                web_pixel_extension: {
-                  title: "DDKT Analysis Tracking",
-                  settings: "{}"
-                }
-              }
-            });
-            console.log("【App】使用 web_pixel_extensions 路徑建立成功");
-          } catch (error2: any) {
-            console.log("【App】web_pixel_extensions 路徑建立也失敗:", error2?.status, error2?.statusText);
-
-            try {
-              // 嘗試 extensions 路徑
-              createApiPath = 'extensions';
-              createResponse = await admin.rest.post({
-                path: createApiPath,
-                data: {
-                  extension: {
-                    type: "web_pixel",
-                    title: "DDKT Analysis Tracking",
-                    settings: "{}"
-                  }
-                }
-              });
-              console.log("【App】使用 extensions 路徑建立成功");
-            } catch (error3: any) {
-              console.log("【App】所有建立路徑都失敗，拋出錯誤");
-              throw error3;
+        let createApiPath = 'web_pixels';
+        createResponse = await admin.rest.post({
+          path: createApiPath,
+          data: {
+            web_pixel: {
+              title: "DDKT Analysis Tracking",
+              settings: "{}",
+              script_url: `https://shopify-ddkt-analysis-tracking.vercel.app/${jsFileName}`
             }
           }
-        }
+        });
+        console.log("【App】Web Pixel instance 註冊成功，script_url:", `https://shopify-ddkt-analysis-tracking.vercel.app/${jsFileName}`);
 
         // 解析回應，支援 response.json() 或 response.body
         let createData;
