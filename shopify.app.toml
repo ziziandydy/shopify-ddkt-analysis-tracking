@@ -26,7 +26,7 @@ api_version = "2025-04"
 scopes = "write_products,write_script_tags,read_script_tags,read_pixels,write_pixels,read_customer_events"
 
 [auth]
-redirect_urls = ["https://shopify-ddkt-analysis-tracking.vercel.app/auth/callback", "https://shopify-ddkt-analysis-tracking.vercel.app/auth/shopify/callback", "https://shopify-ddkt-analysis-tracking.vercel.app/api/auth/callback"]
+redirect_urls = ["https://shopify-ddkt-analysis-tracking.vercel.app/auth/callback", "https://shopify-ddkt-analysis-tracking.vercel.app/auth/shopify/callback"]
 
 [pos]
 embedded = false

@@ -4,7 +4,9 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
     const shopDomain = params.shop || "test-shop";
     const trackid = "spfyex-" + Buffer.from(shopDomain).toString("base64").replace(/=+$/, "");
     const jsContent = `register(({ analytics }) => {
+    console.log('[Pixel Extension] loaded for shop: ${shopDomain}');
     analytics.subscribe("all_standard_events", (event) => {
+      console.log('[Pixel Extension] event:', event.name);
       const payload = {
         event: event.name,
         data: event.data,
