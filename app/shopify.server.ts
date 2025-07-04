@@ -107,9 +107,9 @@ const shopify = shopifyApp({
 
     try {
       // 新增 debug log
-      const accessToken = admin.session?.accessToken || admin.session?.access_token;
+      const accessToken = session?.accessToken;
       console.log("[DEBUG] Access Token:", accessToken ? "存在" : "不存在");
-      const shopDomain = admin.session?.shop || admin.session?.shopDomain;
+      const shopDomain = session?.shop;
       console.log("[DEBUG] Shop Domain:", shopDomain);
       console.log("[DEBUG] admin.rest.get:", typeof admin.rest.get);
       console.log("[DEBUG] SHOPIFY_API_KEY:", process.env.SHOPIFY_API_KEY ? "存在" : "不存在");
@@ -143,9 +143,9 @@ const shopify = shopifyApp({
         });
 
         // 新增 debug log
-        const accessToken = admin.session?.accessToken || admin.session?.access_token;
+        const accessToken = session?.accessToken;
         console.log("[DEBUG] Extension 檢查 - Access Token:", accessToken ? "存在" : "不存在");
-        const shopDomain = admin.session?.shop || admin.session?.shopDomain;
+        const shopDomain = session?.shop;
         console.log("[DEBUG] Extension 檢查 - Shop Domain:", shopDomain);
         console.log("[DEBUG] Extension 檢查 - admin.rest.get:", typeof admin.rest.get);
         console.log("[DEBUG] Extension 檢查 - 準備查詢 web_pixels，header:", {

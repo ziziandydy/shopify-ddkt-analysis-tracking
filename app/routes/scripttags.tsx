@@ -62,9 +62,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         }
 
         // 新增 debug log
-        const accessToken = adminAny.session?.accessToken || adminAny.session?.access_token;
+        const accessToken = authResult.session?.accessToken;
+        const shopDomain = authResult.session?.shop;
         console.log("[DEBUG] Access Token:", accessToken ? "存在" : "不存在");
-        const shopDomain = adminAny.session?.shop || adminAny.session?.shopDomain;
         console.log("[DEBUG] Shop Domain:", shopDomain);
         console.log("[DEBUG] adminAny.rest.get:", typeof adminAny.rest.get);
         console.log("[DEBUG] SHOPIFY_API_KEY:", process.env.SHOPIFY_API_KEY ? "存在" : "不存在");
