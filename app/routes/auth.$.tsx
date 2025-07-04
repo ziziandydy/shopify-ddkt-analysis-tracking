@@ -3,7 +3,7 @@ import { authenticate } from "../shopify.server";
 import { logCookieInfo, logCookieHeaders } from "../utils/cookie-logger";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  console.log("=== Auth 路由被觸發 ===");
+  console.log("=== Auth 路由被觸發 ===", request.url);
   console.log("【Auth】請求 URL:", request.url);
   console.log("【Auth】請求方法:", request.method);
   console.log("【Auth】User-Agent:", request.headers.get("user-agent"));
