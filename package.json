@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "remix build",
-    "vercel-build": "npm install --no-optional --legacy-peer-deps && npm install @rollup/rollup-linux-x64-gnu@4.21.1 --force && npm rebuild esbuild && prisma generate && remix vite:build",
+    "vercel-build": "npm install --no-optional --legacy-peer-deps && npm install @rollup/rollup-linux-x64-gnu@4.21.1 --force && npm rebuild esbuild && prisma generate && npx remix vite:build",
     "dev": "shopify app dev",
     "config:link": "shopify app config link",
     "generate": "shopify app generate",
@@ -53,7 +53,6 @@
     "eslint": "^8.42.0",
     "eslint-config-prettier": "^10.0.1",
     "prettier": "^3.2.4",
-    "remix": "^1.15.0",
     "typescript": "^5.2.2",
     "vite": "^6.3.5"
   },

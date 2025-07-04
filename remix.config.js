@@ -20,7 +20,7 @@ export default {
         v3_singleFetch: false,
         v3_routeConfig: true,
     },
-    // Vercel 部署設定
-    serverBuildTarget: "vercel",
-    server: "./server.js",
+    // Vercel 部署設定 - 移除舊的設定
+    // serverBuildTarget: "vercel",
+    // server: "./server.js",
 }; 
