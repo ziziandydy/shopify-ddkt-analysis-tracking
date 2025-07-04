@@ -348,10 +348,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
         // 取得 shop domain
         const shopDomain = authResult.session?.shop || "test-shop";
-        // 產生唯一 trackid
-        const jsFileName = `pixel-extension.${shopDomain}.js`;
-        // script_url 指向 Remix 動態 route
-        const scriptUrl = `https://shopify-ddkt-analysis-tracking.vercel.app/app/${jsFileName}`;
+        // 暫時使用靜態路由，確保 extension 能正常載入
+        const scriptUrl = `https://shopify-ddkt-analysis-tracking.vercel.app/app/pixel-andism.js`;
         // 註冊 Web Pixel instance 並指定 script_url
         let createResponse;
         let createApiPath = 'web_pixels';
