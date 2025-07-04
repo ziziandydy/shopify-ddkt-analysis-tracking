@@ -2,7 +2,7 @@
   "name": "ddkt-analysis-tracking",
   "private": true,
   "scripts": {
-    "build": "prisma generate && remix vite:build",
+    "build": "remix build",
     "vercel-build": "npm install --no-optional --legacy-peer-deps && npm install @rollup/rollup-linux-x64-gnu@4.21.1 --force && npm rebuild esbuild && prisma generate && remix vite:build",
     "dev": "shopify app dev",
     "config:link": "shopify app config link",
@@ -55,7 +55,8 @@
     "eslint-config-prettier": "^10.0.1",
     "prettier": "^3.2.4",
     "typescript": "^5.2.2",
-    "vite": "^6.3.5"
+    "vite": "^6.3.5",
+    "remix": "^1.15.0"
   },
   "workspaces": [
     "extensions/*"
