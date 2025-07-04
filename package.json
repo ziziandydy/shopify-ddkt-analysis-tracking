@@ -25,7 +25,6 @@
   },
   "dependencies": {
     "@prisma/client": "^6.2.1",
-    "@remix-run/dev": "^2.16.1",
     "@remix-run/fs-routes": "^2.16.1",
     "@remix-run/node": "^2.16.1",
     "@remix-run/react": "^2.16.1",
@@ -40,10 +39,10 @@
     "prisma": "^6.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "vite-tsconfig-paths": "^5.0.1",
-    "@esbuild/linux-x64": "0.20.11"
+    "vite-tsconfig-paths": "^5.0.1"
   },
   "devDependencies": {
+    "@remix-run/dev": "^2.16.8",
     "@remix-run/eslint-config": "^2.16.1",
     "@remix-run/route-config": "^2.16.1",
     "@shopify/api-codegen-preset": "^1.1.1",
@@ -54,9 +53,9 @@
     "eslint": "^8.42.0",
     "eslint-config-prettier": "^10.0.1",
     "prettier": "^3.2.4",
+    "remix": "^1.15.0",
     "typescript": "^5.2.2",
-    "vite": "^6.3.5",
-    "remix": "^1.15.0"
+    "vite": "^6.3.5"
   },
   "workspaces": [
     "extensions/*"
@@ -83,8 +82,8 @@
     }
   },
   "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "4.21.1",
-    "@esbuild/linux-x64": "0.20.11"
+    "@esbuild/linux-x64": "0.20.11",
+    "@rollup/rollup-linux-x64-gnu": "4.21.1"
   },
   "author": "iTubai"
 }
