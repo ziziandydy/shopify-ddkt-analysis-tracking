@@ -1026,32 +1026,44 @@ export default function Index() {
 
                 <Button
                   loading={isLoading && fetcher.formData?.get("action") === "registerWebPixel"}
-                  onClick={registerWebPixel}
-                  variant="secondary"
+                  onClick={() => {
+                    const form = document.createElement('form');
+                    form.method = 'post';
+                    form.style.display = 'none';
+                    const actionInput = document.createElement('input');
+                    actionInput.name = 'action';
+                    actionInput.value = 'registerWebPixel';
+                    form.appendChild(actionInput);
+                    document.body.appendChild(form);
+                    form.submit();
+                  }}
+                  variant="primary"
                 >
-                  檢查安裝狀態
+                  註冊 Web Pixel Extension
                 </Button>
 
-                {registerWebPixelData && (
+                {fetcher.data && fetcher.data.type === "registerWebPixel" && (
                   <BlockStack gap="400">
-                    {registerWebPixelData.success ? (
-                      <Banner tone="success" title="Web Pixel Extension 已存在">
-                        <p>Extension 已經存在，ID: {registerWebPixelData.extensionId}</p>
-                      </Banner>
-                    ) : (
-                      <Banner tone="info" title="安裝指導">
-                        <p>{registerWebPixelData.message}</p>
-                        {registerWebPixelData.instructions && (
-                          <div style={{ marginTop: "10px" }}>
-                            <ol>
-                              {registerWebPixelData.instructions.map((instruction: string, index: number) => (
-                                <li key={index} style={{ marginBottom: "5px" }}>{instruction}</li>
-                              ))}
-                            </ol>
-                          </div>
-                        )}
-                      </Banner>
-                    )}
+                    {(() => {
+                      const data = fetcher.data as any;
+                      if (typeof data.success === 'boolean' && data.success) {
+                        return (
+                          <Banner tone="success" title="Web Pixel Extension 註冊成功">
+                            <p>{data.message || ''}</p>
+                            {data.extensionId && <p>ID: {data.extensionId}</p>}
+                          </Banner>
+                        );
+                      } else {
+                        return (
+                          <Banner tone="critical" title="Web Pixel Extension 註冊失敗">
+                            <p>{data.error?.message || data.message || '未知錯誤'}</p>
+                            {data.error?.status && (
+                              <p>狀態碼: {data.error.status} {data.error.statusText}</p>
+                            )}
+                          </Banner>
+                        );
+                      }
+                    })()}
                   </BlockStack>
                 )}
 
