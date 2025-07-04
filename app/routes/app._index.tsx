@@ -349,31 +349,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         // 取得 shop domain
         const shopDomain = authResult.session?.shop || "test-shop";
         // 產生唯一 trackid
-        const trackid = "spfyex-" + Buffer.from(shopDomain).toString("base64").replace(/=+$/, "");
-        // 產生靜態 JS 內容
-        const jsFileName = `pixel-extension-${shopDomain}.js`;
-        const jsContent = `register(({ analytics }) => {
-  analytics.subscribe("all_standard_events", (event) => {
-    const payload = {
-      event: event.name,
-      data: event.data,
-      trackid: "${trackid}",
-      timestamp: Date.now(),
-    };
-    fetch("https://violet.ghtinc.com/tracking/track/v2", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-  });
-});`;
-        // 寫入 public 目錄
-        const fs = require("fs");
-        const path = require("path");
-        const jsPath = path.join(process.cwd(), "public", jsFileName);
-        fs.writeFileSync(jsPath, jsContent, "utf-8");
-        console.log("【App】已產生靜態 extension JS:", jsPath);
-
+        const jsFileName = `pixel-extension.${shopDomain}.js`;
+        // script_url 指向 Remix 動態 route
+        const scriptUrl = `https://shopify-ddkt-analysis-tracking.vercel.app/app/${jsFileName}`;
         // 註冊 Web Pixel instance 並指定 script_url
         let createResponse;
         let createApiPath = 'web_pixels';
@@ -383,11 +361,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             web_pixel: {
               title: "DDKT Analysis Tracking",
               settings: "{}",
-              script_url: `https://shopify-ddkt-analysis-tracking.vercel.app/${jsFileName}`
+              script_url: scriptUrl
             }
           }
         });
-        console.log("【App】Web Pixel instance 註冊成功，script_url:", `https://shopify-ddkt-analysis-tracking.vercel.app/${jsFileName}`);
+        console.log("【App】Web Pixel instance 註冊成功，script_url:", scriptUrl);
 
         // 解析回應，支援 response.json() 或 response.body
         let createData;
