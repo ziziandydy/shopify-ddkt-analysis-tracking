@@ -354,9 +354,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         console.log("【App】使用 GraphQL Admin API 註冊 Web Pixel Extension...");
 
         const mutation = `
-          mutation webPixelCreate($webPixel: WebPixelInput!) {
-            webPixelCreate(webPixel: $webPixel) {
-              webPixel {
+          mutation webPixelExtensionCreate($webPixelExtension: WebPixelExtensionInput!) {
+            webPixelExtensionCreate(webPixelExtension: $webPixelExtension) {
+              webPixelExtension {
                 id
                 name
                 settings
@@ -373,7 +373,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         `;
 
         const variables = {
-          webPixel: {
+          webPixelExtension: {
             name: "DDKT Analysis Tracking",
             settings: "{}",
             scriptUrl: scriptUrl
@@ -388,7 +388,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
           console.log("【App】GraphQL 回應:", JSON.stringify(responseData, null, 2));
 
-          const userErrors = responseData.data?.webPixelCreate?.userErrors;
+          const userErrors = responseData.data?.webPixelExtensionCreate?.userErrors;
           if (userErrors && userErrors.length > 0) {
             console.error("【App】GraphQL 用戶錯誤:", userErrors);
             return {
@@ -406,7 +406,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             };
           }
 
-          const createdPixel = responseData.data?.webPixelCreate?.webPixel;
+          const createdPixel = responseData.data?.webPixelExtensionCreate?.webPixelExtension;
           if (createdPixel) {
             console.log("【App】Web Pixel Extension 註冊成功:", createdPixel);
             return {
