@@ -353,24 +353,135 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         // 註冊 Web Pixel instance 並指定 script_url
         let createResponse;
         let createApiPath = 'web_pixels';
-        createResponse = await admin.rest.post({
-          path: createApiPath,
-          data: {
+
+        console.log("【App】嘗試 API 路徑:", createApiPath);
+        console.log("【App】請求數據:", {
+          web_pixel: {
+            title: "DDKT Analysis Tracking",
+            settings: "{}",
+            script_url: scriptUrl
+          }
+        });
+
+        // 先檢查 API 是否可用
+        try {
+          console.log("【App】檢查 API 可用性...");
+          const checkResponse = await admin.rest.get({ path: createApiPath });
+          console.log("【App】API 檢查成功，狀態:", checkResponse.status);
+        } catch (checkError: any) {
+          console.error("【App】API 檢查失敗:", checkError.message);
+          console.error("【App】API 檢查狀態:", checkError.status);
+
+          // 如果 web_pixels 不可用，嘗試 web_pixel_extensions
+          if (checkError.status === 404 || checkError.status === 403) {
+            try {
+              console.log("【App】嘗試檢查備用 API: web_pixel_extensions");
+              const backupCheck = await admin.rest.get({ path: 'web_pixel_extensions' });
+              console.log("【App】備用 API 檢查成功");
+              createApiPath = 'web_pixel_extensions';
+            } catch (backupCheckError: any) {
+              console.error("【App】備用 API 檢查也失敗:", backupCheckError.message);
+              return {
+                type: "registerWebPixel",
+                success: false,
+                error: {
+                  message: "Web Pixel API 不可用，可能需要先部署 Extension 到 Partner 後台",
+                  status: 404,
+                  statusText: "API Not Available",
+                  details: {
+                    primaryApiError: checkError.message,
+                    backupApiError: backupCheckError.message,
+                    suggestion: "請先執行 'npx shopify app deploy' 部署 Extension"
+                  }
+                }
+              };
+            }
+          }
+        }
+
+        try {
+          const requestData = createApiPath === 'web_pixels' ? {
             web_pixel: {
               title: "DDKT Analysis Tracking",
               settings: "{}",
               script_url: scriptUrl
             }
-          }
-        });
-        console.log("【App】Web Pixel instance 註冊成功，script_url:", scriptUrl);
+          } : {
+            web_pixel_extension: {
+              title: "DDKT Analysis Tracking",
+              settings: "{}",
+              script_url: scriptUrl
+            }
+          };
 
-        // 解析回應，支援 response.json() 或 response.body
+          console.log("【App】使用 API 路徑:", createApiPath);
+          console.log("【App】請求數據:", requestData);
+
+          createResponse = await admin.rest.post({
+            path: createApiPath,
+            data: requestData
+          });
+        } catch (apiError: any) {
+          console.error("【App】API 請求失敗:", apiError.message);
+          console.error("【App】API 錯誤狀態:", apiError.status);
+          console.error("【App】API 錯誤詳情:", apiError);
+
+          return {
+            type: "registerWebPixel",
+            success: false,
+            error: {
+              message: `API 請求失敗: ${apiError.message}`,
+              status: apiError.status || 500,
+              statusText: apiError.statusText || "API Error",
+              details: {
+                apiPath: createApiPath,
+                error: apiError.message,
+                suggestion: "請檢查 App 權限和 Extension 部署狀態"
+              }
+            }
+          };
+        }
+        console.log("【App】Web Pixel instance 註冊成功，script_url:", scriptUrl);
+        console.log("【App】API 回應狀態:", createResponse.status);
+        console.log("【App】API 回應 headers:", createResponse.headers);
+
+        // 解析回應，加入更好的錯誤處理
         let createData;
-        if (typeof createResponse.json === 'function') {
-          createData = await createResponse.json();
-        } else {
-          createData = createResponse.body;
+        try {
+          if (typeof createResponse.json === 'function') {
+            createData = await createResponse.json();
+            console.log("【App】使用 response.json() 解析成功");
+          } else {
+            createData = createResponse.body;
+            console.log("【App】使用 response.body 解析成功");
+          }
+          console.log("【App】解析後的數據類型:", typeof createData);
+          console.log("【App】解析後的數據:", JSON.stringify(createData, null, 2));
+        } catch (parseError: any) {
+          console.error("【App】JSON 解析失敗:", parseError.message);
+          console.error("【App】原始回應:", createResponse);
+
+          // 嘗試獲取原始文字
+          try {
+            const rawText = await createResponse.text();
+            console.log("【App】原始回應文字:", rawText);
+          } catch (textError) {
+            console.error("【App】無法獲取原始文字:", textError);
+          }
+
+          return {
+            type: "registerWebPixel",
+            success: false,
+            error: {
+              message: `JSON 解析失敗: ${parseError.message}`,
+              status: 500,
+              statusText: "JSON Parse Error",
+              details: {
+                parseError: parseError.message,
+                responseStatus: createResponse.status
+              }
+            }
+          };
         }
 
         const createdPixel = createData?.web_pixel || createData?.web_pixel_extension || createData?.extension;
