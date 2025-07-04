@@ -358,7 +358,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             webPixelCreate(webPixel: $webPixel) {
               webPixel {
                 id
-                title
+                name
                 settings
                 scriptUrl
                 createdAt
@@ -374,7 +374,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
         const variables = {
           webPixel: {
-            title: "DDKT Analysis Tracking",
+            name: "DDKT Analysis Tracking",
             settings: "{}",
             scriptUrl: scriptUrl
           }
