@@ -89,9 +89,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           };
         }
 
-        // 新增 debug log
-        const accessToken = adminAny.session?.accessToken || adminAny.session?.access_token;
-        const shopDomain = adminAny.session?.shop || adminAny.session?.shopDomain;
+        // 修正 accessToken 與 shopDomain 的取得方式（只取正確型別）
+        const accessToken = authResult.session?.accessToken;
+        const shopDomain = authResult.session?.shop;
         console.log("[DEBUG] Access Token:", accessToken ? "存在" : "不存在");
         console.log("[DEBUG] Shop Domain:", shopDomain);
         console.log("[DEBUG] adminAny.rest.get:", typeof adminAny.rest.get);
