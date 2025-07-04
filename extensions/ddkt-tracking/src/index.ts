@@ -4,8 +4,7 @@ register(({ analytics }) => {
   // 訂閱所有標準事件
   analytics.subscribe("all_standard_events", (event) => {
     // 產生 trackid，prefix 為 spfyex-
-    const shopId = event.context?.shopId || event.context?.shopDomain || "test";
-    const trackid = `spfyex-${shopId}`;
+    const trackid = `spfyex-${Date.now()}`;
     // 組合送出資料，參考 pixel.js
     const payload = {
       event: event.name,

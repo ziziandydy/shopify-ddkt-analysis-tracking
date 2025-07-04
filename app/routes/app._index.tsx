@@ -350,63 +350,42 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         const shopDomain = authResult.session?.shop || "test-shop";
         // 使用 public 目錄下的靜態檔案，確保 extension 能正常載入
         const scriptUrl = `https://shopify-ddkt-analysis-tracking.vercel.app/pixel-andism.js`;
-        // 使用 GraphQL Admin API 註冊 Web Pixel Extension
-        console.log("【App】使用 GraphQL Admin API 註冊 Web Pixel Extension...");
-
-        const mutation = `
-          mutation webPixelExtensionCreate($webPixelExtension: WebPixelExtensionInput!) {
-            webPixelExtensionCreate(webPixelExtension: $webPixelExtension) {
-              webPixelExtension {
-                id
-                name
-                settings
-                scriptUrl
-                createdAt
-                updatedAt
-              }
-              userErrors {
-                field
-                message
-              }
-            }
-          }
-        `;
-
-        const variables = {
-          webPixelExtension: {
-            name: "DDKT Analysis Tracking",
-            settings: "{}",
-            scriptUrl: scriptUrl
-          }
-        };
-
-        console.log("【App】GraphQL 變數:", variables);
+        // 使用 REST API 註冊 Web Pixel Extension
+        console.log("【App】使用 REST API 註冊 Web Pixel Extension...");
 
         try {
-          const response = await admin.graphql(mutation, { variables });
-          const responseData = await response.json();
+          // 檢查是否已經存在
+          const existingResponse = await admin.rest.get({ path: 'web_pixels' });
+          const existingPixels = (existingResponse.body as any)?.web_pixels || [];
+          const ourPixel = existingPixels.find((pixel: any) =>
+            pixel.title === 'DDKT Analysis Tracking' ||
+            pixel.title === 'ddkt-tracking' ||
+            pixel.title?.includes('ddkt')
+          );
 
-          console.log("【App】GraphQL 回應:", JSON.stringify(responseData, null, 2));
-
-          const userErrors = responseData.data?.webPixelExtensionCreate?.userErrors;
-          if (userErrors && userErrors.length > 0) {
-            console.error("【App】GraphQL 用戶錯誤:", userErrors);
+          if (ourPixel) {
+            console.log("【App】Web Pixel Extension 已存在:", ourPixel);
             return {
               type: "registerWebPixel",
-              success: false,
-              error: {
-                message: `GraphQL 錯誤: ${userErrors.map((e: any) => e.message).join(", ")}`,
-                status: 400,
-                statusText: "GraphQL User Error",
-                details: {
-                  userErrors: userErrors,
-                  suggestion: "請檢查輸入參數和 Extension 設定"
-                }
-              }
+              success: true,
+              message: "Web Pixel Extension 已經存在",
+              extensionId: ourPixel.id,
+              apiPath: "REST API (Existing)"
             };
           }
 
-          const createdPixel = responseData.data?.webPixelExtensionCreate?.webPixelExtension;
+          // 建立新的 Web Pixel
+          const createResponse = await admin.rest.post({
+            path: 'web_pixels',
+            data: {
+              web_pixel: {
+                title: "DDKT Analysis Tracking",
+                settings: "{}"
+              }
+            }
+          });
+
+          const createdPixel = (createResponse.body as any)?.web_pixel;
           if (createdPixel) {
             console.log("【App】Web Pixel Extension 註冊成功:", createdPixel);
             return {
@@ -414,38 +393,38 @@ export const action = async ({ request }: ActionFunctionArgs) => {
               success: true,
               message: "Web Pixel Extension 註冊成功",
               extensionId: createdPixel.id,
-              apiPath: "GraphQL Admin API"
+              apiPath: "REST API"
             };
           } else {
-            console.error("【App】無法從 GraphQL 回應中獲取 Web Pixel 數據");
+            console.error("【App】無法從 REST API 回應中獲取 Web Pixel 數據");
             return {
               type: "registerWebPixel",
               success: false,
               error: {
-                message: "GraphQL 回應中沒有 Web Pixel 數據",
+                message: "REST API 回應中沒有 Web Pixel 數據",
                 status: 500,
-                statusText: "GraphQL Response Error",
+                statusText: "REST API Response Error",
                 details: {
-                  responseData: responseData,
-                  suggestion: "請檢查 GraphQL 回應格式"
+                  responseData: createResponse.body as any,
+                  suggestion: "請檢查 REST API 回應格式"
                 }
               }
             };
           }
-        } catch (graphqlError: any) {
-          console.error("【App】GraphQL 請求失敗:", graphqlError.message);
-          console.error("【App】GraphQL 錯誤詳情:", graphqlError);
+        } catch (restError: any) {
+          console.error("【App】REST API 請求失敗:", restError.message);
+          console.error("【App】REST API 錯誤詳情:", restError);
 
           return {
             type: "registerWebPixel",
             success: false,
             error: {
-              message: `GraphQL 請求失敗: ${graphqlError.message}`,
-              status: 500,
-              statusText: "GraphQL Error",
+              message: `REST API 請求失敗: ${restError.message}`,
+              status: restError.status || 500,
+              statusText: restError.statusText || "REST API Error",
               details: {
-                error: graphqlError.message,
-                suggestion: "請檢查 GraphQL 語法和 Extension 部署狀態"
+                error: restError.message,
+                suggestion: "請檢查 API 權限和 Extension 部署狀態"
               }
             }
           };
