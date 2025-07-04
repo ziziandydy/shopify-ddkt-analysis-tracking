@@ -3,6 +3,15 @@ import { authenticate } from "../shopify.server";
 import { logCookieInfo, logCookieHeaders } from "../utils/cookie-logger";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
+  console.log("=== [DEBUG] 進入 /auth/* loader ===", request.url, new Date().toISOString());
+  // 輸出所有 query 參數
+  const url = new URL(request.url);
+  console.log("[DEBUG] Query Params:", Object.fromEntries(url.searchParams.entries()));
+  // 輸出所有 headers
+  console.log("[DEBUG] Headers:", Object.fromEntries(request.headers.entries()));
+  // 輸出 cookies
+  console.log("[DEBUG] Cookie:", request.headers.get("cookie"));
+
   console.log("=== Auth 路由被觸發 ===", request.url);
   console.log("【Auth】請求 URL:", request.url);
   console.log("【Auth】請求方法:", request.method);
