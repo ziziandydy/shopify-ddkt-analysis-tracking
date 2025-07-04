@@ -1026,17 +1026,7 @@ export default function Index() {
 
                 <Button
                   loading={isLoading && fetcher.formData?.get("action") === "registerWebPixel"}
-                  onClick={() => {
-                    const form = document.createElement('form');
-                    form.method = 'post';
-                    form.style.display = 'none';
-                    const actionInput = document.createElement('input');
-                    actionInput.name = 'action';
-                    actionInput.value = 'registerWebPixel';
-                    form.appendChild(actionInput);
-                    document.body.appendChild(form);
-                    form.submit();
-                  }}
+                  onClick={registerWebPixel}
                   variant="primary"
                 >
                   註冊 Web Pixel Extension
@@ -1481,6 +1471,13 @@ Response:
           </Layout.Section>
         </Layout>
       </BlockStack>
+
+      {/* Debug: 顯示 fetcher.data 內容 */}
+      {fetcher.data && (
+        <pre style={{ background: '#eee', color: '#333', fontSize: 12 }}>
+          {JSON.stringify(fetcher.data, null, 2)}
+        </pre>
+      )}
     </Page>
   );
 }
