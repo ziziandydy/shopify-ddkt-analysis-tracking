@@ -1,0 +1,71 @@
+#!/bin/sh
+
+# 檢查是否有敏感資訊被提交
+echo "🔍 檢查敏感資訊..."
+
+# 定義敏感關鍵字模式
+FORBIDDEN_PATTERNS=(
+    "postgres://.*:.*@"
+    "postgresql://.*:.*@"
+    "mysql://.*:.*@"
+    "mongodb://.*:.*@"
+    "SHOPIFY_API_SECRET\s*=\s*['\"][^'\"]+['\"]"
+    "DATABASE_URL\s*=\s*['\"].*://.*@.*['\"]"
+    "sk_[a-zA-Z0-9]{32,}"
+    "password\s*=\s*['\"][^'\"]+['\"]"
+)
+
+# 定義白名單（允許包含示例密碼的文件）
+WHITELIST_FILES=(
+    "SECURITY_CHECKLIST.md"
+    "URGENT_ACTIONS.md"
+    ".husky/pre-commit"
+    "README.md"
+    "SECURITY_CLEANUP.sh"
+)
+
+# 獲取即將提交的檔案
+FILES=$(git diff --cached --name-only --diff-filter=ACM)
+
+HAS_SECRETS=0
+
+for FILE in $FILES; do
+    # 跳過 node_modules 和其他忽略的目錄
+    if echo "$FILE" | grep -qE 'node_modules|.git|build/'; then
+        continue
+    fi
+    
+    # 檢查是否在白名單中
+    IS_WHITELISTED=0
+    for WHITELIST in "${WHITELIST_FILES[@]}"; do
+        if [[ "$FILE" == *"$WHITELIST"* ]]; then
+            IS_WHITELISTED=1
+            break
+        fi
+    done
+    
+    if [ $IS_WHITELISTED -eq 1 ]; then
+        echo "⚪ 跳過白名單檔案: $FILE"
+        continue
+    fi
+    
+    # 檢查每個模式
+    for PATTERN in "${FORBIDDEN_PATTERNS[@]}"; do
+        if git diff --cached "$FILE" | grep -qE "$PATTERN"; then
+            echo "❌ 發現敏感資訊在檔案: $FILE"
+            echo "   模式: $PATTERN"
+            HAS_SECRETS=1
+        fi
+    done
+done
+
+if [ $HAS_SECRETS -eq 1 ]; then
+    echo ""
+    echo "⚠️  提交被拒絕：發現可能的敏感資訊"
+    echo "   請檢查上述檔案並移除敏感資訊"
+    echo "   如果這是誤判，請使用 git commit --no-verify"
+    exit 1
+fi
+
+echo "✅ 未發現敏感資訊"
+

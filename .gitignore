@@ -14,8 +14,14 @@ database.sqlite
 .env
 .env.*
 
-
-
+# Security: Database and credentials
+compare_databases.js
+*credentials*.js
+*secrets*.js
+*.key
+*.pem
+*.p12
+*.pfx
 
 
 /extensions/*/dist
