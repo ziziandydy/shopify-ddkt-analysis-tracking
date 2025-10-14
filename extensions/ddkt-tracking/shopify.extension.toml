@@ -1,4 +1,5 @@
 name = "ddkt-tracking"
+uid = "4f924c8b-a98d-7cde-6cc4-34e5611864831a4fc5a7"
 type = "web_pixel_extension"
 
 runtime_context = "strict"
